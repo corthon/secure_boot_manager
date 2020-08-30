@@ -2,6 +2,8 @@
 #![no_std]
 
 extern crate panic;
+extern crate uefi;
+extern crate allocation;
 
 use r_efi::efi;
 
