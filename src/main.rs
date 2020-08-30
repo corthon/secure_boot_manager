@@ -5,7 +5,7 @@ extern crate panic;
 extern crate uefi;
 extern crate allocation;
 
-use r_efi::efi;
+use our_efi::efi;
 
 fn main(_h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status {
   let s = [
@@ -38,6 +38,6 @@ fn main(_h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status {
 
 #[export_name = "efi_main"]
 pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status {
-  unsafe { uefi::services::boot::init((*st).boot_services as &efi::BootServices) };
+  unsafe { uefi::services::boot::init_by_st(st); }
   main(h, st)
 }
