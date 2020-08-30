@@ -7,9 +7,8 @@ extern crate allocation;
 
 use r_efi::efi;
 
-#[export_name = "efi_main"]
-pub extern "C" fn main(_h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status {
-    let s = [
+fn main(_h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status {
+  let s = [
         0x0048u16, 0x0065u16, 0x006cu16, 0x006cu16, 0x006fu16, // "Hello"
         0x0020u16, //                                             " "
         0x0057u16, 0x006fu16, 0x0072u16, 0x006cu16, 0x0064u16, // "World"
@@ -35,4 +34,10 @@ pub extern "C" fn main(_h: efi::Handle, st: *mut efi::SystemTable) -> efi::Statu
     }
 
     efi::Status::SUCCESS
+}
+
+#[export_name = "efi_main"]
+pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status {
+  unsafe { uefi::services::boot::init((*st).boot_services as &efi::BootServices) };
+  main(h, st)
 }
