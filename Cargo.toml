@@ -22,11 +22,12 @@ memcpy = false
 
 [dependencies.r-efi]
 git = "https://github.com/microsoft/mu_rust.git"
+branch = "personal/brbarkel/secure_boot_manager"
 
-[dependencies.allocation]
-features = ["alloc_by_bs"]   ## TODO: Figure this out.
-#features = ["alloc_by_c"]
+[dependencies.uefi]
 git = "https://github.com/microsoft/mu_rust.git"
+branch = "personal/brbarkel/secure_boot_manager"
+features = ["bs-intrinsics"]
 
 [dependencies.panic]
 git = "https://github.com/microsoft/mu_rust.git"
