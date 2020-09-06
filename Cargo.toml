@@ -17,8 +17,12 @@ panic = "abort"
 [net]
 git-fetch-with-cli = true
 
-[package.metadata.cargo-xbuild]
-memcpy = false
+#[package.metadata.cargo-xbuild]
+#memcpy = false
+
+# Bring this in to help debug.
+[dependencies]
+x86_64="*"
 
 [dependencies.our-efi]
 git = "https://github.com/microsoft/mu_rust.git"
@@ -27,7 +31,11 @@ branch = "personal/brbarkel/secure_boot_manager"
 [dependencies.uefi]
 git = "https://github.com/microsoft/mu_rust.git"
 branch = "personal/brbarkel/secure_boot_manager"
-features = ["bs-intrinsics"]
+#features = ["bs-intrinsics"]
+
+[dependencies.string]
+git = "https://github.com/microsoft/mu_rust.git"
+branch = "personal/brbarkel/secure_boot_manager"
 
 [dependencies.allocation]
 git = "https://github.com/microsoft/mu_rust.git"
