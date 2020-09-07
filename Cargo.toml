@@ -20,10 +20,6 @@ git-fetch-with-cli = true
 #[package.metadata.cargo-xbuild]
 #memcpy = false
 
-# Bring this in to help debug.
-[dependencies]
-x86_64="*"
-
 [dependencies.our-efi]
 git = "https://github.com/microsoft/mu_rust.git"
 branch = "personal/brbarkel/secure_boot_manager"

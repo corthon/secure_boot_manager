@@ -10,8 +10,6 @@ extern crate allocation;
 use our_efi::efi;
 use string::OsString;
 
-use x86_64::instructions::interrupts;
-
 struct AppInstance {
   h: efi::Handle,
   st: core::ptr::NonNull<efi::SystemTable>,
@@ -30,23 +28,12 @@ impl AppInstance {
     unsafe {
       let con_out = (*self.st.as_ptr()).con_out;
       ((*con_out).output_string)(con_out, OsString::from(out_string).as_mut_ptr() as *mut efi::Char16);
-      // ((*con_out).output_string)(con_out, out_string.as_mut_ptr() as *mut efi::Char16);
     }
   }
 
   pub fn main(&mut self) -> efi::Status {
-    let source_string = "This is my string.";
-    // let mut s = [
-    //     0x0048u16, 0x0065u16, 0x006cu16, 0x006cu16, 0x006fu16, // "Hello"
-    //     0x0020u16, //                                             " "
-    //     0x0057u16, 0x006fu16, 0x0072u16, 0x006cu16, 0x0064u16, // "World"
-    //     0x0021u16, //                                             "!"
-    //     0x000au16, //                                             "\n"
-    //     0x0000u16, //                                             NUL
-    // ];
-    interrupts::int3();
+    let source_string = "This is my string.\r\nThere are many strings like it, but this one is mine.\r\n";
     self.print(source_string);
-    // self.print(&mut s);
 
     efi::Status::SUCCESS
   }
@@ -54,7 +41,12 @@ impl AppInstance {
 
 #[export_name = "efi_main"]
 pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status {
-  unsafe { uefi::services::boot::init_by_st(st); }
+  unsafe {
+    // Set up the allocator.
+    allocation::init(st);
+    // Set up BootServices.
+    uefi::services::boot::init_by_st(st);
+  }
   let mut app = AppInstance::init(h, st).unwrap();
   app.main()
 }
