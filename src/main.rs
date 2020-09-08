@@ -7,6 +7,8 @@ extern crate uefi;
 #[cfg(not(test))]
 extern crate allocation;
 
+mod runtime;
+
 use our_efi::efi;
 use string::OsString;
 
@@ -35,6 +37,9 @@ impl AppInstance {
     let source_string = "This is my string.\r\nThere are many strings like it, but this one is mine.\r\n";
     self.print(source_string);
 
+    let rs = runtime::RuntimeServices::new(self.st.as_ptr());
+    let result = rs.get_variable("Boot0000", &runtime::EFI_GLOBAL_VARIABLE_GUID);
+
     efi::Status::SUCCESS
   }
 }
@@ -53,7 +58,7 @@ pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::S
 
 #[cfg(test)]
 mod tests {
-  use string::OsString;
+  // use string::OsString;
 
   #[test]
   fn os_string_should_have_values() {
