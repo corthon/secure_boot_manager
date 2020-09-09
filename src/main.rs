@@ -6,11 +6,14 @@ extern crate panic;
 extern crate uefi;
 #[cfg(not(test))]
 extern crate allocation;
+extern crate alloc;
 
 mod runtime;
 
 use our_efi::efi;
 use string::OsString;
+
+use core::fmt;
 
 struct AppInstance {
   h: efi::Handle,
@@ -39,6 +42,7 @@ impl AppInstance {
 
     let rs = runtime::RuntimeServices::new(self.st.as_ptr());
     let result = rs.get_variable("Boot0000", &runtime::EFI_GLOBAL_VARIABLE_GUID);
+    self.print(&alloc::format!("{:?}", result));
 
     efi::Status::SUCCESS
   }
