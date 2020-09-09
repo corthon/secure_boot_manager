@@ -76,8 +76,8 @@ impl RuntimeServices {
         Ok(EfiVariable {
           name: String::from(name),
           guid: local_guid,
-          data: Vec::from([0]),
-          attributes: 0
+          data,
+          attributes
         })
       }
   }

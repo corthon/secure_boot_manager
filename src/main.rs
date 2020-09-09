@@ -13,8 +13,6 @@ mod runtime;
 use our_efi::efi;
 use string::OsString;
 
-use core::fmt;
-
 struct AppInstance {
   h: efi::Handle,
   st: core::ptr::NonNull<efi::SystemTable>,
@@ -41,8 +39,16 @@ impl AppInstance {
     self.print(source_string);
 
     let rs = runtime::RuntimeServices::new(self.st.as_ptr());
-    let result = rs.get_variable("Boot0000", &runtime::EFI_GLOBAL_VARIABLE_GUID);
-    self.print(&alloc::format!("{:?}", result));
+    let mut result = rs.get_variable("Boot0000", &runtime::EFI_GLOBAL_VARIABLE_GUID);
+    self.print(&alloc::format!("{:?}\r\n", result));
+    result = rs.get_variable("SetupMode", &runtime::EFI_GLOBAL_VARIABLE_GUID);
+    self.print(&alloc::format!("{:?}\r\n", result));
+    result = rs.get_variable("SignatureSupport", &runtime::EFI_GLOBAL_VARIABLE_GUID);
+    self.print(&alloc::format!("{:?}\r\n", result));
+    result = rs.get_variable("OsIndicationsSupported", &runtime::EFI_GLOBAL_VARIABLE_GUID);
+    self.print(&alloc::format!("{:?}\r\n", result));
+    result = rs.get_variable("NotAVar", &runtime::EFI_GLOBAL_VARIABLE_GUID);
+    self.print(&alloc::format!("{:?}\r\n", result));
 
     efi::Status::SUCCESS
   }
