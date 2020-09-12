@@ -10,7 +10,7 @@ extern crate alloc;
 
 mod runtime;
 
-use our_efi::efi;
+use r_efi::efi;
 use string::OsString;
 
 struct AppInstance {

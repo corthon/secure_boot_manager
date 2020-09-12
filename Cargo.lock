@@ -3,10 +3,10 @@
 [[package]]
 name = "allocation"
 version = "0.1.0"
-source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager#62300eeca595e84b6ced450a4aefcec841de4068"
+source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#802b7cd93ef65ecb6ef8ad38254fb084b33b34b0"
 dependencies = [
- "our-efi",
  "panic",
+ "r-efi",
 ]
 
 [[package]]
@@ -25,22 +25,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "our-efi"
-version = "3.0.0"
-source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager#62300eeca595e84b6ced450a4aefcec841de4068"
-
-[[package]]
 name = "panic"
 version = "0.1.0"
-source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager#62300eeca595e84b6ced450a4aefcec841de4068"
+source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#802b7cd93ef65ecb6ef8ad38254fb084b33b34b0"
+
+[[package]]
+name = "r-efi"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6eaab81f2b90c518541382de3e3a0689a0426d0798d0fdef56f3df69636e83dd"
 
 [[package]]
 name = "secure-boot-manager"
 version = "0.1.0"
 dependencies = [
  "allocation",
- "our-efi",
  "panic",
+ "r-efi",
  "string",
  "uefi",
 ]
@@ -48,14 +49,14 @@ dependencies = [
 [[package]]
 name = "string"
 version = "0.1.0"
-source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager#62300eeca595e84b6ced450a4aefcec841de4068"
+source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#802b7cd93ef65ecb6ef8ad38254fb084b33b34b0"
 
 [[package]]
 name = "uefi"
 version = "0.1.0"
-source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager#62300eeca595e84b6ced450a4aefcec841de4068"
+source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#802b7cd93ef65ecb6ef8ad38254fb084b33b34b0"
 dependencies = [
  "log",
- "our-efi",
+ "r-efi",
  "string",
 ]

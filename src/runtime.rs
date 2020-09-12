@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 
 use core::ptr::NonNull;
-use our_efi::efi;
+use r_efi::efi;
 use string::OsString;
 
 extern crate alloc;
