@@ -3,9 +3,9 @@
 
 #[cfg(not(test))]
 extern crate panic;
-extern crate uefi;
 #[cfg(not(test))]
 extern crate allocation;
+extern crate uefi;
 extern crate alloc;
 
 mod runtime;
@@ -13,11 +13,13 @@ mod runtime;
 use r_efi::efi;
 use string::OsString;
 
+#[allow(dead_code)]
 struct AppInstance {
   h: efi::Handle,
   st: core::ptr::NonNull<efi::SystemTable>,
 }
 
+#[allow(dead_code)]
 impl AppInstance {
   pub fn init(h: efi::Handle, st: *mut efi::SystemTable) -> Result<Self, efi::Status> {
     if !st.is_null() {
@@ -54,6 +56,8 @@ impl AppInstance {
   }
 }
 
+
+#[cfg(not(test))]
 #[export_name = "efi_main"]
 pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status {
   unsafe {
@@ -64,15 +68,4 @@ pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::S
   }
   let mut app = AppInstance::init(h, st).unwrap();
   app.main()
-}
-
-#[cfg(test)]
-mod tests {
-  // use string::OsString;
-
-  #[test]
-  fn os_string_should_have_values() {
-      let str_str = "This is my test string.";
-      println!("{}", str_str);
-  }
 }
