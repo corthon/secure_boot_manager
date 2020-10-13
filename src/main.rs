@@ -12,6 +12,7 @@ mod image_authentication;
 mod runtime;
 mod test_data;
 mod util;
+mod shell_protocol;
 
 use r_efi::efi;
 use string::OsString;
