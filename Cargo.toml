@@ -21,18 +21,18 @@ git-fetch-with-cli = true
 r-efi = "3.0.0"
 
 [dependencies.uefi]
-git = "https://github.com/microsoft/mu_rust.git"
+git = "https://github.com/corthon/mu_rust.git"
 branch = "personal/brbarkel/secure_boot_manager2"
 #features = ["bs-intrinsics"]
 
 [dependencies.string]
-git = "https://github.com/microsoft/mu_rust.git"
+git = "https://github.com/corthon/mu_rust.git"
 branch = "personal/brbarkel/secure_boot_manager2"
 
 [dependencies.allocation]
-git = "https://github.com/microsoft/mu_rust.git"
+git = "https://github.com/corthon/mu_rust.git"
 branch = "personal/brbarkel/secure_boot_manager2"
 
 [dependencies.panic]
-git = "https://github.com/microsoft/mu_rust.git"
+git = "https://github.com/corthon/mu_rust.git"
 branch = "personal/brbarkel/secure_boot_manager2"
