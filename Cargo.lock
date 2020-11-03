@@ -3,7 +3,7 @@
 [[package]]
 name = "allocation"
 version = "0.1.0"
-source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#a40578575618be891be56baf27a4391f13642262"
+source = "git+https://github.com/corthon/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#a40578575618be891be56baf27a4391f13642262"
 dependencies = [
  "panic",
  "r-efi",
@@ -27,13 +27,13 @@ dependencies = [
 [[package]]
 name = "panic"
 version = "0.1.0"
-source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#a40578575618be891be56baf27a4391f13642262"
+source = "git+https://github.com/corthon/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#a40578575618be891be56baf27a4391f13642262"
 
 [[package]]
 name = "r-efi"
-version = "3.1.0"
+version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6eaab81f2b90c518541382de3e3a0689a0426d0798d0fdef56f3df69636e83dd"
+checksum = "6198999a900fd9cf051f2109ec3b9589b5c67cbfc77ff82c9fdff24aec83aa7b"
 
 [[package]]
 name = "secure-boot-manager"
@@ -49,12 +49,12 @@ dependencies = [
 [[package]]
 name = "string"
 version = "0.1.0"
-source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#a40578575618be891be56baf27a4391f13642262"
+source = "git+https://github.com/corthon/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#a40578575618be891be56baf27a4391f13642262"
 
 [[package]]
 name = "uefi"
 version = "0.1.0"
-source = "git+https://github.com/microsoft/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#a40578575618be891be56baf27a4391f13642262"
+source = "git+https://github.com/corthon/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#a40578575618be891be56baf27a4391f13642262"
 dependencies = [
  "log",
  "r-efi",
