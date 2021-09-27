@@ -9,6 +9,7 @@ extern crate panic;
 extern crate uefi;
 
 mod image_authentication;
+mod boot;
 mod runtime;
 mod test_data;
 mod util;
