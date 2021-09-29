@@ -26,6 +26,9 @@ struct AppInstance {
     st: core::ptr::NonNull<efi::SystemTable>,
 }
 
+// TODO: Possibly make this AppInstance a shared static.
+//       There's tradeoffs to this, but the handle might be needed in several places.
+
 #[allow(dead_code)]
 impl AppInstance {
     pub fn init(h: efi::Handle, st: *mut efi::SystemTable) -> Result<Self, efi::Status> {

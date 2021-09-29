@@ -15,7 +15,7 @@ pub const PROTOCOL_GUID: Guid = Guid::from_fields(
 );
 
 #[repr(C)]
-pub struct Protocol {
+pub struct RawProtocol {
     pub execute: eficall! {fn(
         *const r_efi::base::Handle,
         *const r_efi::efi::Char16,
@@ -142,3 +142,7 @@ pub type FileHandle = *mut core::ffi::c_void;
 pub type DeviceNameFlags = u32;
 pub const DEVICE_NAME_USE_COMPONENT_NAME: DeviceNameFlags = 0x00000001;
 pub const DEVICE_NAME_USE_DEVICE_PATH: DeviceNameFlags = 0x00000002;
+
+pub struct Protocol {
+    inner: Option<RawProtocol>
+}
