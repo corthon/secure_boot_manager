@@ -30,7 +30,7 @@ pub struct EfiVariable {
 }
 
 pub struct RuntimeServices {
-    pub inner: NonNull<EfiRuntimeService>,
+    inner: NonNull<EfiRuntimeService>,
 }
 
 impl RuntimeServices {

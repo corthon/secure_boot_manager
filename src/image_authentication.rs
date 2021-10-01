@@ -4,7 +4,7 @@ use r_efi::efi;
 use r_efi::efi::Guid;
 
 use crate::util::{DebugBuffer, DebugGuid};
-use crate::AppResult;
+use crate::UefiResult;
 
 pub const EFI_CERT_X509_GUID: Guid = Guid::from_fields(
     0xa5c059a1,
@@ -59,7 +59,7 @@ pub struct SignatureListElement {
 }
 
 impl SignatureListElement {
-    pub fn from_bytes(buffer: &[u8]) -> AppResult<Self> {
+    pub fn from_bytes(buffer: &[u8]) -> UefiResult<Self> {
         if buffer.len() < core::mem::size_of::<Guid>() {
             return Err(efi::Status::BAD_BUFFER_SIZE);
         }
@@ -99,7 +99,7 @@ pub struct SignatureList {
 }
 
 impl SignatureList {
-    pub fn from_bytes(buffer: &[u8]) -> AppResult<Self> {
+    pub fn from_bytes(buffer: &[u8]) -> UefiResult<Self> {
         if buffer.len() < RAW_EFI_SIGNATURE_LIST_SIZE {
             return Err(efi::Status::INVALID_PARAMETER);
         }

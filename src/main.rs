@@ -17,13 +17,15 @@ mod shell_protocol;
 
 use r_efi::efi;
 use string::OsString;
+use core::ptr::NonNull;
+use core::cell::RefCell;
 
-pub type AppResult<T> = Result<T, r_efi::efi::Status>;
+pub type UefiResult<T> = Result<T, r_efi::efi::Status>;
 
 #[allow(dead_code)]
 struct AppInstance {
     h: efi::Handle,
-    st: core::ptr::NonNull<efi::SystemTable>,
+    st: RefCell<NonNull<efi::SystemTable>>,
 }
 
 // TODO: Possibly make this AppInstance a shared static.
@@ -35,16 +37,17 @@ impl AppInstance {
         if !st.is_null() {
             Ok(Self {
                 h,
-                st: core::ptr::NonNull::new(st).unwrap(),
+                st: RefCell::new(NonNull::new(st).unwrap()),
             })
         } else {
             Err(efi::Status::INVALID_PARAMETER)
         }
     }
 
-    fn print(&mut self, out_string: &str) {
+    pub fn print(&self, out_string: &str) {
+        let st = self.st.borrow_mut();
         unsafe {
-            let con_out = (*self.st.as_ptr()).con_out;
+            let con_out = (*st.as_ptr()).con_out;
             ((*con_out).output_string)(
                 con_out,
                 OsString::from(out_string).as_mut_ptr() as *mut efi::Char16,
@@ -52,24 +55,13 @@ impl AppInstance {
         }
     }
 
-    pub fn main(&mut self) -> efi::Status {
-        let source_string =
-            "This is my string.\r\nThere are many strings like it, but this one is mine.\r\n";
-        self.print(source_string);
+    pub fn main(&mut self) -> UefiResult<()> {
+        self.print("WELCOME TO THE APP!");
 
-        let rs = runtime::RuntimeServices::new(self.st.as_ptr());
-        let mut result = rs.get_variable("Boot0000", &runtime::EFI_GLOBAL_VARIABLE_GUID);
-        self.print(&alloc::format!("{:?}\r\n", result));
-        result = rs.get_variable("SetupMode", &runtime::EFI_GLOBAL_VARIABLE_GUID);
-        self.print(&alloc::format!("{:?}\r\n", result));
-        result = rs.get_variable("SignatureSupport", &runtime::EFI_GLOBAL_VARIABLE_GUID);
-        self.print(&alloc::format!("{:?}\r\n", result));
-        result = rs.get_variable("OsIndicationsSupported", &runtime::EFI_GLOBAL_VARIABLE_GUID);
-        self.print(&alloc::format!("{:?}\r\n", result));
-        result = rs.get_variable("NotAVar", &runtime::EFI_GLOBAL_VARIABLE_GUID);
-        self.print(&alloc::format!("{:?}\r\n", result));
+        let rs = runtime::RuntimeServices::new((*self.st.borrow()).as_ptr());
+        boot::BootServices::init((*self.st.borrow()).as_ptr())?;
 
-        efi::Status::SUCCESS
+        Ok(())
     }
 }
 
@@ -83,5 +75,9 @@ pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::S
         uefi::services::boot::init_by_st(st);
     }
     let mut app = AppInstance::init(h, st).unwrap();
-    app.main()
+
+    match app.main() {
+        Ok(_) => efi::Status::SUCCESS,
+        Err(err) => err
+    }
 }

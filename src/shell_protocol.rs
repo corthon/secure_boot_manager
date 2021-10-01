@@ -143,6 +143,13 @@ pub type DeviceNameFlags = u32;
 pub const DEVICE_NAME_USE_COMPONENT_NAME: DeviceNameFlags = 0x00000001;
 pub const DEVICE_NAME_USE_DEVICE_PATH: DeviceNameFlags = 0x00000002;
 
+// Currently being designed with extra code that might get wrapped in a trait?
+// Something about being able to Open and Close automatically?
 pub struct Protocol {
+    handle: r_efi::efi::Handle,
+    agent_handle: r_efi::efi::Handle,
+    guid: r_efi::efi::Guid,     // Is this necessary? I think get_guid() could be a trait.
+    // Theoretically, if we could get the notificaitons working, the Option
+    // could be set to None on unexpected disconnect.
     inner: Option<RawProtocol>
 }
