@@ -18,7 +18,7 @@ panic = "abort"
 git-fetch-with-cli = true
 
 [dependencies]
-r-efi = "3.0.0"
+r-efi = "4.0.0"
 
 [dependencies.uefi]
 git = "https://github.com/corthon/mu_rust.git"

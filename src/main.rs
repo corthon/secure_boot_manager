@@ -59,7 +59,7 @@ impl AppInstance {
         self.print("WELCOME TO THE APP!");
 
         let rs = runtime::RuntimeServices::new((*self.st.borrow()).as_ptr());
-        boot::BootServices::init((*self.st.borrow()).as_ptr())?;
+        unsafe { boot::BootServices::init((*self.st.borrow()).as_ptr())? };
 
         Ok(())
     }
