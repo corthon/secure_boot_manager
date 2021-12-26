@@ -8,6 +8,7 @@ extern crate allocation;
 extern crate panic;
 extern crate uefi;
 
+mod auth_variable;
 mod boot;
 mod image_authentication;
 mod runtime;
@@ -56,7 +57,7 @@ impl AppInstance {
     }
 
     pub fn main(&mut self) -> UefiResult<()> {
-        self.print("WELCOME TO THE APP!");
+        self.print("WELCOME TO THE APP!\n");
 
         let rs = runtime::RuntimeServices::new((*self.st.borrow()).as_ptr());
         unsafe { boot::BootServices::init((*self.st.borrow()).as_ptr())? };
