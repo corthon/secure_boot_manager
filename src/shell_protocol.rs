@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 
-use r_efi::{eficall, eficall_abi};
 use r_efi::efi::Guid;
+use r_efi::{eficall, eficall_abi};
 
 pub const PROTOCOL_GUID: Guid = Guid::from_fields(
     0x6302d008,
@@ -148,8 +148,8 @@ pub const DEVICE_NAME_USE_DEVICE_PATH: DeviceNameFlags = 0x00000002;
 pub struct Protocol {
     handle: r_efi::efi::Handle,
     agent_handle: r_efi::efi::Handle,
-    guid: r_efi::efi::Guid,     // Is this necessary? I think get_guid() could be a trait.
+    guid: r_efi::efi::Guid, // Is this necessary? I think get_guid() could be a trait.
     // Theoretically, if we could get the notificaitons working, the Option
     // could be set to None on unexpected disconnect.
-    inner: Option<RawProtocol>
+    inner: Option<RawProtocol>,
 }

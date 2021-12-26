@@ -8,17 +8,17 @@ extern crate allocation;
 extern crate panic;
 extern crate uefi;
 
-mod image_authentication;
 mod boot;
+mod image_authentication;
 mod runtime;
+mod shell_protocol;
 mod test_data;
 mod util;
-mod shell_protocol;
 
+use core::cell::RefCell;
+use core::ptr::NonNull;
 use r_efi::efi;
 use string::OsString;
-use core::ptr::NonNull;
-use core::cell::RefCell;
 
 pub type UefiResult<T> = Result<T, r_efi::efi::Status>;
 
@@ -78,6 +78,6 @@ pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::S
 
     match app.main() {
         Ok(_) => efi::Status::SUCCESS,
-        Err(err) => err
+        Err(err) => err,
     }
 }

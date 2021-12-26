@@ -1,5 +1,5 @@
-use alloc::vec::Vec;
 use alloc::string::String;
+use alloc::vec::Vec;
 use core::convert::TryInto;
 use core::fmt;
 use core::fmt::Write;
