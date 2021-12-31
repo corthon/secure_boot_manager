@@ -62,9 +62,15 @@ impl AppInstance {
         let rs = runtime::RuntimeServices::new((*self.st.borrow()).as_ptr());
         unsafe { boot::BootServices::init((*self.st.borrow()).as_ptr())? };
 
-        let ret = rs.get_variable(auth_variable::EFI_IMAGE_SECURITY_DATABASE, &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID);
+        let ret = rs.get_variable(
+            auth_variable::EFI_IMAGE_SECURITY_DATABASE,
+            &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID,
+        );
         self.print(&alloc::format!("{:?}\r\n", ret));
-        let ret = rs.get_variable(auth_variable::EFI_IMAGE_SECURITY_DATABASE1, &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID);
+        let ret = rs.get_variable(
+            auth_variable::EFI_IMAGE_SECURITY_DATABASE1,
+            &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID,
+        );
         self.print(&alloc::format!("{:?}\r\n", ret));
         let ret = rs.get_variable("PK", &runtime::EFI_GLOBAL_VARIABLE_GUID);
         self.print(&alloc::format!("{:?}\r\n", ret));
