@@ -36,3 +36,9 @@ The following features should be achievable (with some stretch goals == ?):
 - Wrapper for walking FSes
 - Way to request a ConnectAll?
 - Way to request "map -r"?
+
+## Build Command
+
+```bash
+cargo +nightly build -Z build-std=core,alloc -Z build-std-features=compiler-builtins-mem --target x86_64-unknown-uefi --manifest-path C:\_uefi\mu_ci\mu_tiano_platforms\SBManage\Cargo.toml
+```
