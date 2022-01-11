@@ -8,20 +8,12 @@ extern crate allocation;
 extern crate panic;
 extern crate uefi;
 
-mod auth_variable;
-mod boot;
-mod image_authentication;
-mod runtime;
-mod shell_protocol;
-mod test_data;
-mod util;
-
 use core::cell::RefCell;
 use core::ptr::NonNull;
 use r_efi::efi;
 use string::OsString;
 
-pub type UefiResult<T> = Result<T, r_efi::efi::Status>;
+use mu_rust_ex::{auth_variable, boot, runtime, UefiResult};
 
 #[allow(dead_code)]
 struct AppInstance {
@@ -57,7 +49,7 @@ impl AppInstance {
     }
 
     pub fn main(&mut self) -> UefiResult<()> {
-        self.print("WELCOME TO THE APP!\n");
+        self.print("WELCOME TO THE APP!\r\n");
 
         let rs = runtime::RuntimeServices::new((*self.st.borrow()).as_ptr());
         unsafe { boot::BootServices::init((*self.st.borrow()).as_ptr())? };

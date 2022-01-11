@@ -26,7 +26,7 @@ pub struct EfiVariable {
     pub name: String,
     pub guid: efi::Guid,
     pub data: Vec<u8>,
-    attributes: u32,
+    pub attributes: u32,
 }
 
 pub struct RuntimeServices {

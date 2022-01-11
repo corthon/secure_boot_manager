@@ -1,13 +1,11 @@
 [package]
-name = "secure-boot-manager"
-version = "0.1.0"
+name = "mu-rust-ex"
+version = "0.0.1"
 authors = ["Bret Barkelew <brbarkel@microsoft.com>"]
 edition = "2018"
 publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[workspace]
 
 [profile.release]
 panic = "abort"
@@ -21,7 +19,6 @@ git-fetch-with-cli = true
 
 [dependencies]
 r-efi = "4.0.0"
-mu-rust-ex = { path = "mu_rust_ex" }
 
 [dependencies.uefi]
 git = "https://github.com/corthon/mu_rust.git"
@@ -29,13 +26,5 @@ branch = "personal/brbarkel/secure_boot_manager2"
 #features = ["bs-intrinsics"]
 
 [dependencies.string]
-git = "https://github.com/corthon/mu_rust.git"
-branch = "personal/brbarkel/secure_boot_manager2"
-
-[dependencies.allocation]
-git = "https://github.com/corthon/mu_rust.git"
-branch = "personal/brbarkel/secure_boot_manager2"
-
-[dependencies.panic]
 git = "https://github.com/corthon/mu_rust.git"
 branch = "personal/brbarkel/secure_boot_manager2"

@@ -27,6 +27,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mu-rust-ex"
+version = "0.0.1"
+dependencies = [
+ "r-efi",
+ "string",
+ "uefi",
+]
+
+[[package]]
 name = "panic"
 version = "0.1.0"
 source = "git+https://github.com/corthon/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#6384622f5f27ad1803ece7f634caf779774b2fda"
@@ -42,6 +51,7 @@ name = "secure-boot-manager"
 version = "0.1.0"
 dependencies = [
  "allocation",
+ "mu-rust-ex",
  "panic",
  "r-efi",
  "string",
