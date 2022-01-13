@@ -19,7 +19,9 @@ static mut CON_OUT: Option<RefCell<ConOut>> = None;
 impl ConOut {
     fn new(st_ptr: *mut efi::SystemTable) -> UefiResult<Self> {
         let st = unsafe { st_ptr.as_ref() }.ok_or(efi::Status::INVALID_PARAMETER)?;
-        NonNull::new(st.con_out).map(|inner| Self { inner }).ok_or(efi::Status::INVALID_PARAMETER)
+        NonNull::new(st.con_out)
+            .map(|inner| Self { inner })
+            .ok_or(efi::Status::INVALID_PARAMETER)
     }
 
     pub unsafe fn init(st_ptr: *mut efi::SystemTable) -> UefiResult<()> {
@@ -51,9 +53,11 @@ pub fn _print(args: ::core::fmt::Arguments) {
     use core::fmt::Write;
     match unsafe { CON_OUT.as_mut() } {
         Some(co) => {
-            co.borrow_mut().write_fmt(args).expect("error in ConOut write");
-        },
-        _ => ()
+            co.borrow_mut()
+                .write_fmt(args)
+                .expect("error in ConOut write");
+        }
+        _ => (),
     }
 }
 

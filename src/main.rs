@@ -10,10 +10,8 @@ use core::cell::RefCell;
 use core::ptr::NonNull;
 use r_efi::efi;
 
-use mu_rust_ex::{auth_variable, boot, runtime, UefiResult, conout, println};
-use conout::{ConOut};
-
-
+use conout::ConOut;
+use mu_rust_ex::{auth_variable, boot, conout, println, runtime, UefiResult};
 
 #[allow(dead_code)]
 struct AppInstance {
