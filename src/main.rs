@@ -4,8 +4,6 @@
 extern crate alloc;
 #[cfg(not(test))]
 extern crate allocation;
-#[cfg(not(test))]
-extern crate panic;
 extern crate uefi;
 
 use core::cell::RefCell;

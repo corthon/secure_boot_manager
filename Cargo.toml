@@ -23,6 +23,9 @@ git-fetch-with-cli = true
 r-efi = "4.0.0"
 mu-rust-ex = { path = "mu_rust_ex" }
 
+[patch.'https://github.com/corthon/mu_rust.git']
+panic = { path = 'panic' }
+
 [dependencies.uefi]
 git = "https://github.com/corthon/mu_rust.git"
 branch = "personal/brbarkel/secure_boot_manager2"
@@ -33,9 +36,5 @@ git = "https://github.com/corthon/mu_rust.git"
 branch = "personal/brbarkel/secure_boot_manager2"
 
 [dependencies.allocation]
-git = "https://github.com/corthon/mu_rust.git"
-branch = "personal/brbarkel/secure_boot_manager2"
-
-[dependencies.panic]
 git = "https://github.com/corthon/mu_rust.git"
 branch = "personal/brbarkel/secure_boot_manager2"
