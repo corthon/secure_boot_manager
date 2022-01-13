@@ -9,9 +9,11 @@ extern crate uefi;
 use core::cell::RefCell;
 use core::ptr::NonNull;
 use r_efi::efi;
-use string::OsString;
 
-use mu_rust_ex::{auth_variable, boot, runtime, UefiResult};
+use mu_rust_ex::{auth_variable, boot, runtime, UefiResult, conout, println};
+use conout::{ConOut};
+
+
 
 #[allow(dead_code)]
 struct AppInstance {
@@ -35,37 +37,26 @@ impl AppInstance {
         }
     }
 
-    pub fn print(&self, out_string: &str) {
-        let st = self.st.borrow_mut();
-        unsafe {
-            let con_out = (*st.as_ptr()).con_out;
-            ((*con_out).output_string)(
-                con_out,
-                OsString::from(out_string).as_mut_ptr() as *mut efi::Char16,
-            );
-        }
-    }
-
     pub fn main(&mut self) -> UefiResult<()> {
-        self.print("WELCOME TO THE APP!\r\n");
+        println!("WELCOME TO THE APP!");
 
         let rs = runtime::RuntimeServices::new((*self.st.borrow()).as_ptr());
         unsafe { boot::BootServices::init((*self.st.borrow()).as_ptr())? };
 
-        let ret = rs.get_variable(
-            auth_variable::EFI_IMAGE_SECURITY_DATABASE,
-            &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID,
-        );
-        self.print(&alloc::format!("{:?}\r\n", ret));
-        let ret = rs.get_variable(
-            auth_variable::EFI_IMAGE_SECURITY_DATABASE1,
-            &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID,
-        );
-        self.print(&alloc::format!("{:?}\r\n", ret));
-        let ret = rs.get_variable("PK", &runtime::EFI_GLOBAL_VARIABLE_GUID);
-        self.print(&alloc::format!("{:?}\r\n", ret));
-        let ret = rs.get_variable("KEK", &runtime::EFI_GLOBAL_VARIABLE_GUID);
-        self.print(&alloc::format!("{:?}\r\n", ret));
+        // let ret = rs.get_variable(
+        //     auth_variable::EFI_IMAGE_SECURITY_DATABASE,
+        //     &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID,
+        // );
+        // self.print(&alloc::format!("{:?}\r\n", ret));
+        // let ret = rs.get_variable(
+        //     auth_variable::EFI_IMAGE_SECURITY_DATABASE1,
+        //     &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID,
+        // );
+        // self.print(&alloc::format!("{:?}\r\n", ret));
+        // let ret = rs.get_variable("PK", &runtime::EFI_GLOBAL_VARIABLE_GUID);
+        // self.print(&alloc::format!("{:?}\r\n", ret));
+        // let ret = rs.get_variable("KEK", &runtime::EFI_GLOBAL_VARIABLE_GUID);
+        // self.print(&alloc::format!("{:?}\r\n", ret));
 
         Ok(())
     }
@@ -74,7 +65,11 @@ impl AppInstance {
 #[cfg(not(test))]
 #[export_name = "efi_main"]
 pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status {
+    use mu_rust_ex::conout::ConOut;
+
     unsafe {
+        // Set up the console.
+        ConOut::init(st);
         // Set up the allocator.
         allocation::init(st);
         // Set up BootServices.
