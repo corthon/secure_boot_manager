@@ -2,23 +2,12 @@
 // Copyright (c) Microsoft Corporation
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
+#![no_std]
 
-#![cfg_attr(not(test), no_std)]
-#![feature(lang_items)]
-#![allow(unused)]
+use core_con_out::println;
 
-#[cfg(not(test))]
 #[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    loop {}
-}
-
-#[cfg(not(test))]
-#[lang = "eh_personality"]
-fn eh_personality() {}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_lib() {}
+fn panic(info: &core::panic::PanicInfo) -> ! {
+    println!("{}", info);
+    loop {} // TODO: Try to replace with an exit of sorts.
 }

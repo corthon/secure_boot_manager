@@ -37,6 +37,19 @@ The following features should be achievable (with some stretch goals == ?):
 - Way to request a ConnectAll?
 - Way to request "map -r"?
 
+## Investigate
+
+- https://docs.rs/menu/0.3.2/menu/#menu
+
+- https://docs.rs/asn1_der/latest/asn1_der/
+- https://docs.rs/x509-parser/0.6.0/x509_parser/
+
+- https://docs.rs/serde-json-core/latest/serde_json_core/
+- https://docs.rs/heapless/0.7.9/heapless/pool/struct.Pool.html
+
+- https://web.mit.edu/rust-lang_v1.25/arch/amd64_ubuntu1404/share/doc/rust/html/book/first-edition/ffi.html
+- http://jakegoulding.com/rust-ffi-omnibus/objects/
+
 ## Build Command
 
 ```bash

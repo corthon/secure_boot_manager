@@ -5,18 +5,6 @@ authors = ["Bret Barkelew <brbarkel@microsoft.com>"]
 edition = "2018"
 publish = false
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[profile.release]
-panic = "abort"
-
-[profile.dev]
-panic = "abort"
-
-# This is needed while mu_rust is private in the Microsoft organization.
-[net]
-git-fetch-with-cli = true
-
 [dependencies]
 r-efi = "4.0.0"
 

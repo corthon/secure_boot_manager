@@ -4,7 +4,6 @@ extern crate alloc;
 
 pub mod auth_variable;
 pub mod boot;
-pub mod conout;
 pub mod image_authentication;
 pub mod runtime;
 pub mod shell_protocol;

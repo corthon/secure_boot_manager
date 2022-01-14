@@ -2,7 +2,6 @@
 #![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
-#[cfg(not(test))]
 extern crate allocation;
 extern crate uefi;
 
@@ -10,8 +9,8 @@ use core::cell::RefCell;
 use core::ptr::NonNull;
 use r_efi::efi;
 
-use conout::ConOut;
-use mu_rust_ex::{auth_variable, boot, conout, println, runtime, UefiResult};
+use core_con_out::println;
+use mu_rust_ex::{auth_variable, boot, runtime, UefiResult};
 
 #[allow(dead_code)]
 struct AppInstance {
@@ -38,8 +37,10 @@ impl AppInstance {
     pub fn main(&mut self) -> UefiResult<()> {
         println!("WELCOME TO THE APP!");
 
-        let rs = runtime::RuntimeServices::new((*self.st.borrow()).as_ptr());
-        unsafe { boot::BootServices::init((*self.st.borrow()).as_ptr())? };
+        // let rs = runtime::RuntimeServices::new((*self.st.borrow()).as_ptr());
+        // unsafe { boot::BootServices::init((*self.st.borrow()).as_ptr())? };
+
+        panic!("dying in a fire");
 
         // let ret = rs.get_variable(
         //     auth_variable::EFI_IMAGE_SECURITY_DATABASE,
@@ -63,7 +64,7 @@ impl AppInstance {
 #[cfg(not(test))]
 #[export_name = "efi_main"]
 pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status {
-    use mu_rust_ex::conout::ConOut;
+    use core_con_out::ConOut;
 
     unsafe {
         // Set up the console.

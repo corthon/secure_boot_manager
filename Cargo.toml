@@ -15,12 +15,9 @@ panic = "abort"
 [profile.dev]
 panic = "abort"
 
-# This is needed while mu_rust is private in the Microsoft organization.
-[net]
-git-fetch-with-cli = true
-
 [dependencies]
 r-efi = "4.0.0"
+core-con-out = { path = 'core_con_out' }
 mu-rust-ex = { path = "mu_rust_ex" }
 
 [patch.'https://github.com/corthon/mu_rust.git']

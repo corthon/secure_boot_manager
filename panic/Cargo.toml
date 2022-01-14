@@ -4,8 +4,9 @@ authors = ["The Project Mu Rust Developers"]
 version = "0.1.0"
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
 name = "panic"
 crate-type = ["rlib", "staticlib"]
+
+[dependencies]
+core-con-out = { path = "../core_con_out" }

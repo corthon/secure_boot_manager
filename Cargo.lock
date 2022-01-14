@@ -18,6 +18,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "core-con-out"
+version = "0.0.1"
+dependencies = [
+ "r-efi",
+ "spin",
+]
+
+[[package]]
+name = "lock_api"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "712a4d093c9976e24e7dbca41db895dabcbac38eb5f4045393d17a95bdfb1109"
+dependencies = [
+ "scopeguard",
+]
+
+[[package]]
 name = "log"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -38,6 +55,9 @@ dependencies = [
 [[package]]
 name = "panic"
 version = "0.1.0"
+dependencies = [
+ "core-con-out",
+]
 
 [[package]]
 name = "r-efi"
@@ -46,14 +66,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c4257a6ffb364d7f938c0311733a793327639b3d34c0b4af0b3bb775ef3e1b8"
 
 [[package]]
+name = "scopeguard"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
+
+[[package]]
 name = "secure-boot-manager"
 version = "0.1.0"
 dependencies = [
  "allocation",
+ "core-con-out",
  "mu-rust-ex",
  "r-efi",
  "string",
  "uefi",
+]
+
+[[package]]
+name = "spin"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "511254be0c5bcf062b019a6c89c01a664aa359ded62f78aa72c6fc137c0590e5"
+dependencies = [
+ "lock_api",
 ]
 
 [[package]]
