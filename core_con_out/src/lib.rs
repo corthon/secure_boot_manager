@@ -43,7 +43,7 @@ impl ConOut {
         for utf8byte in out_string.bytes() {
             buffer[i] = match utf8byte {
                 // printable ASCII byte or newline
-                0x20..=0x7e | b'\n' => utf8byte as u16,
+                0x20..=0x7e | b'\n' | b'\r' => utf8byte as u16,
                 // not part of printable ASCII range
                 _ => 0xfe as u16,
             };
