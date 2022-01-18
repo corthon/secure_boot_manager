@@ -5,6 +5,7 @@
 #![no_std]
 
 use core::cell::RefCell;
+use core::fmt::Write;
 use core::ptr::NonNull;
 use r_efi::efi;
 use spin::Mutex;
@@ -70,13 +71,12 @@ impl core::fmt::Write for ConOut {
 // This function is especially unsafe in that it will seize the RefCell regardless
 // of whether it is currently borrowed. Only to be used in panic situations
 // when there is no expectation to return.
-pub unsafe fn get_conout_panic() -> Option<&'static mut ConOut> {
-    CON_OUT.as_mut().map(|rc| rc.get_mut())
+pub unsafe fn print_panic(args: ::core::fmt::Arguments) {
+    CON_OUT.as_mut().map(|rc| rc.get_mut().write_fmt(args));
 }
 
 #[doc(hidden)]
 pub fn _print(args: ::core::fmt::Arguments) {
-    use core::fmt::Write;
     match unsafe { CON_OUT.as_mut() } {
         Some(co) => {
             co.borrow_mut()
