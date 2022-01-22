@@ -1,12 +1,31 @@
-trait ManagedProtocol {
-  pub const fn get_guid() -> efi::Guid;
-  pub fn init_protocol(&mut self, prot: *mut core::ffi::c_void) -> Result<(), ()>;
-  pub fn deinit_protocol(&mut self);
+use r_efi::efi;
+
+pub trait ManagedProtocol {
+    type ProtocolType;
+
+    fn get_guid() -> efi::Guid;
+    fn get_handle() -> efi::Handle;
+    fn init_protocol(&mut self, prot: *mut core::ffi::c_void, hand: efi::Handle) -> Result<Self::ProtocolType, efi::Status>;
+    fn deinit_protocol(&mut self);
 }
 
-// struct ProtocolWrapper<T where T: impl ManagedProtocol>;  // Or something.
-// Implements Deref and DerefMut
-// Has the registration and any metadata to figure out how to: 1) deinit "self" and 2) when dropped, unregister this handle.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum ManagedProtocolError {
+    Unregistered,
+    Efi(efi::Status),
+}
+
+pub struct ProtocolWrapper<T: ManagedProtocol> {
+    inner: T,
+}
+
+impl<T: ManagedProtocol> ProtocolWrapper<T> {
+
+}
+
+// TODO: impl Deref for ProtocolWrapper
+// TODO: impl DerefMut for ProtocolWrapper
+// TODO: impl Drop for ProtocolWrapper
 
 // THEN...
 // The struct that implements ManagedProtocol will be responsible for returning special result enums for when the protocol was yanked.
