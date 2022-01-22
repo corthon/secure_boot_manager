@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 
+use core::cell::RefCell;
 use core::mem;
+use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use r_efi::efi;
 
@@ -14,49 +16,73 @@ pub struct BootServices {
     inner: NonNull<EfiBootServices>,
 }
 
-// NOTE: Could even wrap this in a RefCell if we wanted to control re-entrance.
-static mut BOOT_SERVICES: Option<BootServices> = None;
+// NOTE: This is probably not actually thread safe, and should instead use a proper Mutex,
+//       but this will do. Also, this may not be necessary.
+static mut BOOT_SERVICES: Option<RefCell<BootServices>> = None;
+pub fn uefi_bs() -> impl Deref<Target = BootServices> {
+    // We're just going to panic if any of this fails.
+    unsafe {
+        BOOT_SERVICES
+            .as_ref()
+            .map(|opt_bs| opt_bs.borrow())
+            .unwrap()
+    }
+}
+pub fn uefi_bs_mut() -> impl DerefMut<Target = BootServices> {
+    // We're just going to panic if any of this fails.
+    unsafe {
+        BOOT_SERVICES
+            .as_ref()
+            .map(|opt_bs| opt_bs.borrow_mut())
+            .unwrap()
+    }
+}
 
 impl BootServices {
-    unsafe fn new(st_ptr: *mut efi::SystemTable) -> UefiResult<Self> {
-        let bs = (*st_ptr).boot_services;
-        match NonNull::new(bs) {
-            Some(nn) => Ok(Self { inner: nn }),
-            _ => Err(efi::Status::INVALID_PARAMETER),
-        }
+    fn new(st_ptr: *mut efi::SystemTable) -> UefiResult<Self> {
+        let st = unsafe { st_ptr.as_ref() }.ok_or(efi::Status::INVALID_PARAMETER)?;
+        Ok(Self {
+            inner: NonNull::new(st.boot_services).ok_or(efi::Status::INVALID_PARAMETER)?,
+        })
     }
 
     pub unsafe fn init(st_ptr: *mut efi::SystemTable) -> UefiResult<()> {
         let bs = Self::new(st_ptr)?;
-        BOOT_SERVICES = Some(bs);
+        BOOT_SERVICES = Some(RefCell::new(bs));
         Ok(())
     }
 
-    pub fn locate_protocol_handles(
-        protocol: &mut efi::Guid,
-        buffer: &mut [efi::Handle],
-    ) -> UefiResult<usize> {
-        let opt_bs = unsafe { &BOOT_SERVICES };
-        if let Some(bs) = opt_bs {
-            let mut buffer_size: usize = buffer.len() * mem::size_of::<efi::Handle>();
+    pub fn locate_protocol(
+        &self,
+        protocol: &efi::Guid,
+    ) -> UefiResult<*mut core::ffi::c_void> {
+        let bs = unsafe { self.inner.as_ref() };
+        let mut inner_guid = *protocol;
+        let mut ret_ptr: *mut core::ffi::c_void = core::ptr::null_mut();
+        let status = (bs.locate_protocol)(
+            &mut inner_guid as *mut _,
+            core::ptr::null_mut(),
+            &mut ret_ptr as *mut _,
+        );
 
-            let status = unsafe {
-                ((*bs.inner.as_ptr()).locate_handle)(
-                    efi::BY_PROTOCOL,
-                    protocol as *mut _,
-                    core::ptr::null_mut(),
-                    &mut buffer_size as *mut _,
-                    buffer.as_mut_ptr(),
-                )
-            };
-
-            if !status.is_error() {
-                Ok(buffer_size)
-            } else {
-                Err(status)
-            }
+        if !status.is_error() {
+            Ok(ret_ptr)
         } else {
-            Err(efi::Status::NOT_STARTED)
+            Err(status)
         }
     }
+
+    // pub fn locate_protocol_handles(
+    //     &mut self,
+    //     protocol: &mut efi::Guid,
+    //     buffer: &mut [efi::Handle],
+    // ) -> UefiResult<usize> {
+    //     let mut buffer_size: usize = buffer.len() * mem::size_of::<efi::Handle>();
+
+    //     if !status.is_error() {
+    //         Ok(buffer_size)
+    //     } else {
+    //         Err(status)
+    //     }
+    // }
 }
