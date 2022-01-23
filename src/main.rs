@@ -10,7 +10,8 @@ use core::ptr::NonNull;
 use r_efi::efi;
 
 use core_con_out::println;
-use mu_rust_ex::{auth_variable, boot, runtime, UefiResult};
+use mu_rust_ex::variable::EfiVariable;
+use mu_rust_ex::{auth_variable, variable, UefiResult};
 
 #[allow(dead_code)]
 struct AppInstance {
@@ -37,22 +38,19 @@ impl AppInstance {
     pub fn main(&mut self) -> UefiResult<()> {
         println!("WELCOME TO THE APP!");
 
-        let rs = runtime::RuntimeServices::new((*self.st.borrow()).as_ptr());
-        unsafe { boot::BootServices::init((*self.st.borrow()).as_ptr())? };
-
-        let ret = rs.get_variable(
+        let ret = EfiVariable::get_variable(
             auth_variable::EFI_IMAGE_SECURITY_DATABASE,
             &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID,
         );
         println!("{:?}", ret);
-        let ret = rs.get_variable(
+        let ret = EfiVariable::get_variable(
             auth_variable::EFI_IMAGE_SECURITY_DATABASE1,
             &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID,
         );
         println!("{:?}", ret);
-        let ret = rs.get_variable("PK", &runtime::EFI_GLOBAL_VARIABLE_GUID);
+        let ret = EfiVariable::get_variable("PK", &variable::EFI_GLOBAL_VARIABLE_GUID);
         println!("{:?}", ret);
-        let ret = rs.get_variable("KEK", &runtime::EFI_GLOBAL_VARIABLE_GUID);
+        let ret = EfiVariable::get_variable("KEK", &variable::EFI_GLOBAL_VARIABLE_GUID);
         println!("{:?}", ret);
 
         Ok(())
@@ -66,11 +64,13 @@ pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::S
 
     unsafe {
         // Set up the console.
-        ConOut::init(st);
+        let _ = ConOut::init(st);
         // Set up the allocator.
         allocation::init(st);
         // Set up BootServices.
         uefi::services::boot::init_by_st(st);
+        // Setup the Ex lib.
+        let _ = mu_rust_ex::init_lib(st);
     }
     let mut app = AppInstance::init(h, st).unwrap();
 

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 
 use core::cell::RefCell;
-use core::mem;
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
 use r_efi::efi;
@@ -19,6 +18,11 @@ pub struct BootServices {
 // NOTE: This is probably not actually thread safe, and should instead use a proper Mutex,
 //       but this will do. Also, this may not be necessary.
 static mut BOOT_SERVICES: Option<RefCell<BootServices>> = None;
+pub unsafe fn init_uefi_bs(st_ptr: *mut efi::SystemTable) -> UefiResult<()> {
+    let bs = BootServices::new(st_ptr)?;
+    BOOT_SERVICES = Some(RefCell::new(bs));
+    Ok(())
+}
 pub fn uefi_bs() -> impl Deref<Target = BootServices> {
     // We're just going to panic if any of this fails.
     unsafe {
@@ -39,23 +43,14 @@ pub fn uefi_bs_mut() -> impl DerefMut<Target = BootServices> {
 }
 
 impl BootServices {
-    fn new(st_ptr: *mut efi::SystemTable) -> UefiResult<Self> {
+    pub fn new(st_ptr: *mut efi::SystemTable) -> UefiResult<Self> {
         let st = unsafe { st_ptr.as_ref() }.ok_or(efi::Status::INVALID_PARAMETER)?;
         Ok(Self {
             inner: NonNull::new(st.boot_services).ok_or(efi::Status::INVALID_PARAMETER)?,
         })
     }
 
-    pub unsafe fn init(st_ptr: *mut efi::SystemTable) -> UefiResult<()> {
-        let bs = Self::new(st_ptr)?;
-        BOOT_SERVICES = Some(RefCell::new(bs));
-        Ok(())
-    }
-
-    pub fn locate_protocol(
-        &self,
-        protocol: &efi::Guid,
-    ) -> UefiResult<*mut core::ffi::c_void> {
+    pub fn locate_protocol(&self, protocol: &efi::Guid) -> UefiResult<*mut core::ffi::c_void> {
         let bs = unsafe { self.inner.as_ref() };
         let mut inner_guid = *protocol;
         let mut ret_ptr: *mut core::ffi::c_void = core::ptr::null_mut();

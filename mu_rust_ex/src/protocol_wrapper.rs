@@ -3,10 +3,10 @@ use r_efi::efi;
 pub trait ManagedProtocol {
     type ProtocolType;
 
-    fn get_guid() -> efi::Guid;
-    fn get_handle() -> efi::Handle;
+    fn get_guid() -> &'static efi::Guid;
+
+    fn get_handle(&self) -> efi::Handle;
     fn init_protocol(
-        &mut self,
         prot: *mut core::ffi::c_void,
         hand: efi::Handle,
     ) -> Result<Self::ProtocolType, efi::Status>;
