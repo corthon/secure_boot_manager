@@ -2,6 +2,10 @@
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 
+extern crate alloc;
+
+use alloc::vec::Vec;
+
 use core::cell::RefCell;
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
@@ -67,17 +71,59 @@ impl BootServices {
         }
     }
 
-    // pub fn locate_protocol_handles(
-    //     &mut self,
-    //     protocol: &mut efi::Guid,
-    //     buffer: &mut [efi::Handle],
-    // ) -> UefiResult<usize> {
-    //     let mut buffer_size: usize = buffer.len() * mem::size_of::<efi::Handle>();
+    pub fn locate_protocol_handles(&self, protocol: &efi::Guid) -> UefiResult<Vec<efi::Handle>> {
+        let bs = unsafe { self.inner.as_ref() };
+        let mut inner_guid = *protocol;
+        let mut buffer_size: usize = 0;
 
-    //     if !status.is_error() {
-    //         Ok(buffer_size)
-    //     } else {
-    //         Err(status)
-    //     }
-    // }
+        let status = (bs.locate_handle)(
+            efi::BY_PROTOCOL,
+            &mut inner_guid as *mut _,
+            core::ptr::null_mut(),
+            &mut buffer_size as *mut _,
+            core::ptr::null_mut(),
+        );
+
+        if status.is_error() && status != efi::Status::BUFFER_TOO_SMALL {
+            return Err(status);
+        }
+
+        let buffer_count = buffer_size / core::mem::size_of::<efi::Handle>();
+        let mut buffer = Vec::<efi::Handle>::with_capacity(buffer_count);
+
+        let status = (bs.locate_handle)(
+            efi::BY_PROTOCOL,
+            &mut inner_guid as *mut _,
+            core::ptr::null_mut(),
+            &mut buffer_size as *mut _,
+            buffer.as_mut_ptr() as *mut _,
+        );
+
+        if !status.is_error() {
+            Ok(buffer)
+        } else {
+            Err(status)
+        }
+    }
+
+    pub fn get_protocol(&self, protocol: &efi::Guid, handle: efi::Handle) -> UefiResult<*mut core::ffi::c_void> {
+        let bs = unsafe { self.inner.as_ref() };
+        let mut inner_guid = *protocol;
+        let mut prot_ptr: *mut core::ffi::c_void = core::ptr::null_mut();
+
+        let status = (bs.open_protocol)(
+            handle,
+            &mut inner_guid as *mut _,
+            &mut prot_ptr as *mut _,
+            core::ptr::null_mut(),
+            core::ptr::null_mut(),
+            efi::OPEN_PROTOCOL_BY_HANDLE_PROTOCOL,
+        );
+
+        if !status.is_error() {
+            Ok(prot_ptr)
+        } else {
+            Err(status)
+        }
+    }
 }
