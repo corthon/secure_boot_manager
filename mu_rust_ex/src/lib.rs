@@ -7,11 +7,14 @@ pub mod boot;
 pub mod image_authentication;
 pub mod protocol_wrapper;
 pub mod runtime;
+pub mod shell_parameters_protocol;
 pub mod shell_protocol;
 pub mod util;
 pub mod variable;
 
 use r_efi::efi;
+
+use core_con_out::println;
 
 pub type UefiResult<T> = Result<T, efi::Status>;
 

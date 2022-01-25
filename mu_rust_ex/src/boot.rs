@@ -100,13 +100,18 @@ impl BootServices {
         );
 
         if !status.is_error() {
+            unsafe { buffer.set_len(buffer_count) };
             Ok(buffer)
         } else {
             Err(status)
         }
     }
 
-    pub fn get_protocol(&self, protocol: &efi::Guid, handle: efi::Handle) -> UefiResult<*mut core::ffi::c_void> {
+    pub fn get_protocol(
+        &self,
+        protocol: &efi::Guid,
+        handle: efi::Handle,
+    ) -> UefiResult<*mut core::ffi::c_void> {
         let bs = unsafe { self.inner.as_ref() };
         let mut inner_guid = *protocol;
         let mut prot_ptr: *mut core::ffi::c_void = core::ptr::null_mut();

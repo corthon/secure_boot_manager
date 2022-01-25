@@ -39,7 +39,9 @@ impl EfiVariable {
         let data_size: usize = rs.get_variable_size(name_ptr, &mut local_guid as *mut _)?;
 
         let mut data = Vec::<u8>::with_capacity(data_size);
-        let (_, attributes) = rs.get_variable(name_ptr, &mut local_guid as *mut _, &mut data)?;
+        let (data_size, attributes) =
+            rs.get_variable(name_ptr, &mut local_guid as *mut _, &mut data)?;
+        unsafe { data.set_len(data_size) };
 
         Ok(Self {
             name: String::from(name),

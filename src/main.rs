@@ -7,11 +7,12 @@ extern crate uefi;
 
 use core::cell::RefCell;
 use core::ptr::NonNull;
+use mu_rust_ex::protocol_wrapper::ProtocolWrapper;
 use r_efi::efi;
 
 use core_con_out::println;
 use mu_rust_ex::variable::EfiVariable;
-use mu_rust_ex::{auth_variable, variable, UefiResult};
+use mu_rust_ex::{auth_variable, shell_parameters_protocol, variable, UefiResult};
 
 #[allow(dead_code)]
 struct AppInstance {
@@ -37,6 +38,11 @@ impl AppInstance {
 
     pub fn main(&mut self) -> UefiResult<()> {
         println!("WELCOME TO THE APP!");
+
+        let shell_params =
+            ProtocolWrapper::<shell_parameters_protocol::Protocol>::by_handle(self.h)?;
+        let args = shell_params.get_args();
+        println!("{:?}", args);
 
         let ret = EfiVariable::get_variable(
             auth_variable::EFI_IMAGE_SECURITY_DATABASE,

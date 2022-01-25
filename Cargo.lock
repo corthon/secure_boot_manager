@@ -47,6 +47,7 @@ dependencies = [
 name = "mu-rust-ex"
 version = "0.0.1"
 dependencies = [
+ "core-con-out",
  "r-efi",
  "string",
  "uefi",
