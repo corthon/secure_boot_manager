@@ -7,6 +7,7 @@ publish = false
 
 [dependencies]
 r-efi = "4.0.0"
+r-efi-string = "*"
 core-con-out = { path = "../core_con_out" }
 
 [dependencies.uefi]

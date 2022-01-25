@@ -49,6 +49,7 @@ version = "0.0.1"
 dependencies = [
  "core-con-out",
  "r-efi",
+ "r-efi-string",
  "string",
  "uefi",
 ]
@@ -65,6 +66,12 @@ name = "r-efi"
 version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c4257a6ffb364d7f938c0311733a793327639b3d34c0b4af0b3bb775ef3e1b8"
+
+[[package]]
+name = "r-efi-string"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac0d84a2f67232a0e801539f6a9e4c3e9a4ca4cdc441006efe7100e361da3d8a"
 
 [[package]]
 name = "scopeguard"

@@ -9,6 +9,7 @@ use crate::protocol_wrapper::{
 };
 use crate::shell_protocol;
 use r_efi::efi;
+use r_efi_string::str16::EfiStr16;
 
 use crate::{println, UefiResult};
 
@@ -40,8 +41,11 @@ impl Protocol {
     //       if the Option has been taken.
     pub fn get_args(&self) -> MPResult<Vec<String>> {
         let prot = self.inner.ok_or(MPError::Unregistered)?;
-        println!("Arg Count: {}", prot.argc);
-        Err(MPError::Efi(efi::Status::UNSUPPORTED))
+
+        let result: Vec<String> = (0..prot.argc)
+            .map(|i| unsafe { EfiStr16::from_ptr(*prot.argv.add(i)).to_string_lossy() })
+            .collect();
+        Ok(result)
     }
 }
 
