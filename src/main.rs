@@ -25,15 +25,12 @@ struct AppInstance {
 
 #[allow(dead_code)]
 impl AppInstance {
-    pub fn init(h: efi::Handle, st: *mut efi::SystemTable) -> Result<Self, efi::Status> {
-        if !st.is_null() {
-            Ok(Self {
-                h,
-                st: RefCell::new(NonNull::new(st).unwrap()),
-            })
-        } else {
-            Err(efi::Status::INVALID_PARAMETER)
-        }
+    pub fn init(h: efi::Handle, st: *mut efi::SystemTable) -> UefiResult<Self> {
+        let st_inner = NonNull::new(st).ok_or(efi::Status::INVALID_PARAMETER)?;
+        Ok(Self {
+            st: RefCell::new(st_inner),
+            h,
+        })
     }
 
     pub fn main(&mut self) -> UefiResult<()> {
