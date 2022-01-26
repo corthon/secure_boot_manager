@@ -13,6 +13,7 @@ use r_efi_string::str16::EfiStr16;
 
 use crate::{println, UefiResult};
 
+pub const PROTOCOL_NAME: &str = "EfiShellParametersProtocol";
 pub const PROTOCOL_GUID: efi::Guid = efi::Guid::from_fields(
     0x752f3136,
     0x4e16,
@@ -53,6 +54,9 @@ impl Protocol {
 impl ManagedProtocol for Protocol {
     type ProtocolType = Self;
 
+    fn get_name() -> &'static str {
+        PROTOCOL_NAME
+    }
     fn get_guid() -> &'static efi::Guid {
         &PROTOCOL_GUID
     }

@@ -7,6 +7,7 @@ use crate::{boot, println, UefiResult};
 pub trait ManagedProtocol {
     type ProtocolType: ManagedProtocol;
 
+    fn get_name() -> &'static str;
     fn get_guid() -> &'static efi::Guid;
     fn init_protocol(
         prot: *mut core::ffi::c_void,
@@ -24,7 +25,7 @@ pub enum ManagedProtocolError {
 }
 pub type ManagedProtocolResult<T> = Result<T, ManagedProtocolError>;
 
-pub struct ProtocolWrapper<T> {
+pub struct ProtocolWrapper<T: ManagedProtocol> {
     inner: T,
 }
 
@@ -50,20 +51,25 @@ impl<T: ManagedProtocol<ProtocolType = T>> ProtocolWrapper<T> {
         })
     }
 }
-impl<T> Deref for ProtocolWrapper<T> {
+impl<T: ManagedProtocol> Deref for ProtocolWrapper<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
-impl<T> DerefMut for ProtocolWrapper<T> {
+impl<T: ManagedProtocol> DerefMut for ProtocolWrapper<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
 }
-impl<T> Drop for ProtocolWrapper<T> {
+impl<T: ManagedProtocol> Drop for ProtocolWrapper<T> {
     fn drop(&mut self) {
-        println!("dropping ProtocolWrapper");
+        println!("dropping ProtocolWrapper<{}>", T::get_name());
         // TODO: Tell BootServices that we no longer need the deinit callback.
+        // TODO: Make sure that we can distinguish and "unregister" multiple instances of the
+        //      same callback, if multiple people have opened a reference to the same protocol
+        //      on the same handle. Possibly have one master callback with a reference count?
+        //      On the Rust side, we can locate all instances somehow (HashMap?).
+        //      On the UEFI side, we can only unregister the callback once the last instance has been dropped.
     }
 }
