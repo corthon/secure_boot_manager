@@ -112,9 +112,9 @@ pub struct RawProtocol {
         FileHandle,
     ) -> efi::Status},
     pub create_file: eficall! {fn(
-        *const efi::Char16,
-        u64,
-        *mut FileHandle,
+        *const efi::Char16,     // FileName
+        u64,                    // FileAttribs
+        *mut FileHandle,        // FileHandle
     ) -> efi::Status},
     pub read_file: eficall! {fn(
         FileHandle,
@@ -188,6 +188,20 @@ pub struct Protocol {
 }
 
 impl Protocol {
+    pub fn create_file(&self, name: &str, mode: u64) -> MPResult<FileHandle> {
+        let prot = self.inner.ok_or(MPError::Unregistered)?;
+        let efi_name = OsString::from(name);
+        let mut handle: FileHandle = core::ptr::null_mut();
+
+        let status = (prot.create_file)(efi_name.as_ptr(), mode, &mut handle as *mut _);
+
+        if !status.is_error() {
+            Ok(handle)
+        } else {
+            Err(MPError::Efi(status))
+        }
+    }
+
     pub fn open_file_by_name(&self, name: &str, mode: u64) -> MPResult<FileHandle> {
         let prot = self.inner.ok_or(MPError::Unregistered)?;
         let efi_name = OsString::from(name);
@@ -231,6 +245,34 @@ impl Protocol {
 
         if !status.is_error() {
             Ok(write_size)
+        } else {
+            Err(MPError::Efi(status))
+        }
+    }
+
+    pub fn flush_file(&self, handle: FileHandle) -> MPResult<()> {
+        let prot = self.inner.ok_or(MPError::Unregistered)?;
+
+        let status = (prot.flush_file)(
+            handle,
+        );
+
+        if !status.is_error() {
+            Ok(())
+        } else {
+            Err(MPError::Efi(status))
+        }
+    }
+
+    pub fn close_file(&self, handle: FileHandle) -> MPResult<()> {
+        let prot = self.inner.ok_or(MPError::Unregistered)?;
+
+        let status = (prot.close_file)(
+            handle,
+        );
+
+        if !status.is_error() {
+            Ok(())
         } else {
             Err(MPError::Efi(status))
         }

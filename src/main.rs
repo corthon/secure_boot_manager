@@ -5,14 +5,14 @@ extern crate alloc;
 extern crate allocation;
 extern crate uefi;
 
+use alloc::string::String;
 use core::cell::RefCell;
 use core::ptr::NonNull;
 use mu_rust_ex::protocol_wrapper::ProtocolWrapper;
 use r_efi::efi;
 
 use core_con_out::println;
-use mu_rust_ex::variable::EfiVariable;
-use mu_rust_ex::{auth_variable, shell_parameters_protocol, variable, UefiResult};
+use mu_rust_ex::{shell_parameters_protocol, shell_protocol, UefiResult};
 
 #[allow(dead_code)]
 struct AppInstance {
@@ -38,23 +38,44 @@ impl AppInstance {
 
         let shell_params =
             ProtocolWrapper::<shell_parameters_protocol::Protocol>::by_handle(self.h)?;
-        let args = shell_params.get_args();
+        let args = shell_params.get_args()?;
         println!("{:?}", args);
 
-        let ret = EfiVariable::get_variable(
-            auth_variable::EFI_IMAGE_SECURITY_DATABASE,
-            &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID,
-        );
-        println!("{:?}", ret);
-        let ret = EfiVariable::get_variable(
-            auth_variable::EFI_IMAGE_SECURITY_DATABASE1,
-            &auth_variable::EFI_IMAGE_SECURITY_DATABASE_GUID,
-        );
-        println!("{:?}", ret);
-        let ret = EfiVariable::get_variable("PK", &variable::EFI_GLOBAL_VARIABLE_GUID);
-        println!("{:?}", ret);
-        let ret = EfiVariable::get_variable("KEK", &variable::EFI_GLOBAL_VARIABLE_GUID);
-        println!("{:?}", ret);
+        let mut iter = args.iter();
+        let mut output_file: Option<String> = None;
+        loop {
+            let arg = iter.next();
+            if arg.is_none() {
+                break;
+            }
+
+            let arg = arg.unwrap();
+            if arg.eq("-o") {
+                output_file = Some(String::from(iter.next().unwrap()));
+            }
+        }
+
+        println!("Output File: {:?}", output_file);
+
+        match output_file {
+            None => (),
+            Some(of) => {
+                let shell = ProtocolWrapper::<shell_protocol::Protocol>::first()?;
+                let file_handle = shell.create_file(
+                    &of,
+                    r_efi::protocols::file::MODE_CREATE | r_efi::protocols::file::MODE_WRITE,
+                )?;
+
+                let data: [u8; 4] = [0xDE, 0xAD, 0xBE, 0xEF];
+                match shell.write_file(file_handle, &data) {
+                    Ok(_) => println!("File successfully written!"),
+                    Err(e) => println!("Failed to write file! {:?}", e),
+                };
+
+                shell.flush_file(file_handle)?;
+                shell.close_file(file_handle)?;
+            }
+        };
 
         Ok(())
     }
