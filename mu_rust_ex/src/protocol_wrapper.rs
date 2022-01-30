@@ -23,6 +23,14 @@ pub enum ManagedProtocolError {
     Unregistered,
     Efi(efi::Status),
 }
+impl From<ManagedProtocolError> for efi::Status {
+    fn from(f: ManagedProtocolError) -> Self {
+        match f {
+            ManagedProtocolError::Unregistered => efi::Status::MEDIA_CHANGED,
+            ManagedProtocolError::Efi(x) => x,
+        }
+    }
+}
 pub type ManagedProtocolResult<T> = Result<T, ManagedProtocolError>;
 
 pub struct ProtocolWrapper<T: ManagedProtocol> {

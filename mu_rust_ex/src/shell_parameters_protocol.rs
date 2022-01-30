@@ -11,7 +11,7 @@ use crate::shell_protocol;
 use r_efi::efi;
 use r_efi_string::str16::EfiStr16;
 
-use crate::{println, UefiResult};
+use crate::UefiResult;
 
 pub const PROTOCOL_NAME: &str = "EfiShellParametersProtocol";
 pub const PROTOCOL_GUID: efi::Guid = efi::Guid::from_fields(
