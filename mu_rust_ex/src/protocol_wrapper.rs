@@ -1,6 +1,11 @@
 use core::ops::{Deref, DerefMut};
+use core::ptr::NonNull;
+use alloc::rc::{Rc, Weak};
+use alloc::collections::BTreeMap;
+use core::cmp::{Ord, PartialOrd, Ordering};
 
 use r_efi::efi;
+use spin::Mutex;
 
 use crate::{boot, println, UefiResult};
 
@@ -33,11 +38,64 @@ impl From<ManagedProtocolError> for efi::Status {
 }
 pub type ManagedProtocolResult<T> = Result<T, ManagedProtocolError>;
 
+#[derive(Debug, PartialEq, Eq)]
+struct ProtocolCacheKey {
+    guid: efi::Guid,
+    handle: efi::Handle,
+}
+impl PartialOrd for ProtocolCacheKey {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl Ord for ProtocolCacheKey {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.guid.as_bytes().cmp(&other.guid.as_bytes()) {
+            Ordering::Equal => self.handle.cmp(&other.handle),
+            a => a,
+        }
+    }
+}
+// NOTE: While we're using Rc's and not caring about multithreadedness, this is
+//      all well and good. As soon as we care about threading, this table ALSO
+//      needs to be wrapped in a Mutex.
+static mut CACHED_INSTANCES: BTreeMap<ProtocolCacheKey, NonNull<core::ffi::c_void>> = BTreeMap::new();
+
 pub struct ProtocolWrapper<T: ManagedProtocol> {
-    inner: T,
+    inner: Rc<Mutex<T>>,
 }
 
 impl<T: ManagedProtocol<ProtocolType = T>> ProtocolWrapper<T> {
+    fn get_cached_instance(handle: efi::Handle) -> Option<Rc<Mutex<T>>> {
+        let key = ProtocolCacheKey {
+            guid: *T::get_guid(),
+            handle
+        };
+        // TODO: Add a note about why this is safe-ish.
+        let weak_ref = unsafe {
+            let mutex_ptr = CACHED_INSTANCES.get(&key)
+                .map(|nn_ref| (*nn_ref).as_ptr() as *const Mutex<T>)?;
+            Weak::from_raw(mutex_ptr)
+        };
+        let strong_ref = weak_ref.upgrade();
+        if strong_ref.is_some() {
+            // If successful, turn the weak_ref back into raw to prevent dropping.
+            let _ = weak_ref.into_raw();
+        } else {
+            // Otherwise, drop the key from the cache.
+            let _ = unsafe { CACHED_INSTANCES.remove(&key) };
+        }
+
+        strong_ref
+    }
+
+    fn init_cached_instance(handle: efi::Handle) -> Option<Rc<Mutex<T>>> {
+        Self::get_cached_instance(handle).or_else(|| {
+            // TODO: Return an option containing the Rc.
+            None
+        })
+    }
+
     // TODO: Update UEFI to return the handle in LocateProtocol (or some special LocateProtocol).
     pub fn first() -> UefiResult<Self> {
         let bs = boot::uefi_bs();
@@ -62,22 +120,25 @@ impl<T: ManagedProtocol<ProtocolType = T>> ProtocolWrapper<T> {
 impl<T: ManagedProtocol> Deref for ProtocolWrapper<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
-        &self.inner
+        // TODO: This may be bad.
+        &*self.inner.lock()
     }
 }
 impl<T: ManagedProtocol> DerefMut for ProtocolWrapper<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
+        // TODO: This may be bad.
+        &mut *self.inner.lock()
     }
 }
 impl<T: ManagedProtocol> Drop for ProtocolWrapper<T> {
     fn drop(&mut self) {
+        // If the last two references are this one
+        // and the one in the cache... then drop the cache.
+        if self.inner.strong_count() <= 2 {
+            // TODO: Deregister with BootServices
+            // TODO: Drop Rc from the cache
+        }
         println!("dropping ProtocolWrapper<{}>", T::get_name());
         // TODO: Tell BootServices that we no longer need the deinit callback.
-        // TODO: Make sure that we can distinguish and "unregister" multiple instances of the
-        //      same callback, if multiple people have opened a reference to the same protocol
-        //      on the same handle. Possibly have one master callback with a reference count?
-        //      On the Rust side, we can locate all instances somehow (HashMap?).
-        //      On the UEFI side, we can only unregister the callback once the last instance has been dropped.
     }
 }
