@@ -21,6 +21,7 @@ pub struct BootServices {
 
 // NOTE: This is probably not actually thread safe, and should instead use a proper Mutex,
 //       but this will do. Also, this may not be necessary.
+// TODO: Change the RefCell to a spin Mutex.
 static mut BOOT_SERVICES: Option<RefCell<BootServices>> = None;
 pub unsafe fn init_uefi_bs(st_ptr: *mut efi::SystemTable) -> UefiResult<()> {
     let bs = BootServices::new(st_ptr)?;

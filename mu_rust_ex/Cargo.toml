@@ -9,6 +9,7 @@ publish = false
 r-efi = "4.0.0"
 r-efi-string = "*"
 core-con-out = { path = "../core_con_out" }
+spin = "*"
 
 [dependencies.uefi]
 git = "https://github.com/corthon/mu_rust.git"

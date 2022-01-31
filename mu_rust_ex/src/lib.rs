@@ -11,6 +11,8 @@ pub mod shell_parameters_protocol;
 pub mod shell_protocol;
 pub mod util;
 pub mod variable;
+#[cfg(test)]
+mod test_data;
 
 use r_efi::efi;
 

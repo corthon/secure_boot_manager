@@ -50,6 +50,7 @@ dependencies = [
  "core-con-out",
  "r-efi",
  "r-efi-string",
+ "spin",
  "string",
  "uefi",
 ]
