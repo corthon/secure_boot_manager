@@ -1,6 +1,6 @@
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
-use alloc::rc::{Rc, Weak};
+use alloc::sync::{Arc, Weak};
 use alloc::collections::BTreeMap;
 use core::cmp::{Ord, PartialOrd, Ordering};
 
@@ -56,22 +56,24 @@ impl Ord for ProtocolCacheKey {
         }
     }
 }
-// NOTE: While we're using Rc's and not caring about multithreadedness, this is
+// NOTE: While we're not caring about multithreadedness, this is
 //      all well and good. As soon as we care about threading, this table ALSO
 //      needs to be wrapped in a Mutex.
 static mut CACHED_INSTANCES: BTreeMap<ProtocolCacheKey, NonNull<core::ffi::c_void>> = BTreeMap::new();
 
 pub struct ProtocolWrapper<T: ManagedProtocol> {
-    inner: Rc<Mutex<T>>,
+    inner: Arc<Mutex<T>>,
 }
 
 impl<T: ManagedProtocol<ProtocolType = T>> ProtocolWrapper<T> {
-    fn get_cached_instance(handle: efi::Handle) -> Option<Rc<Mutex<T>>> {
+    fn get_cached_instance(handle: efi::Handle) -> Option<Arc<Mutex<T>>> {
         let key = ProtocolCacheKey {
             guid: *T::get_guid(),
             handle
         };
         // TODO: Add a note about why this is safe-ish.
+        // TODO: Add a note to ALL unsafes about what the expectations are and
+        //       why it should be safe.
         let weak_ref = unsafe {
             let mutex_ptr = CACHED_INSTANCES.get(&key)
                 .map(|nn_ref| (*nn_ref).as_ptr() as *const Mutex<T>)?;
@@ -79,19 +81,23 @@ impl<T: ManagedProtocol<ProtocolType = T>> ProtocolWrapper<T> {
         };
         let strong_ref = weak_ref.upgrade();
         if strong_ref.is_some() {
-            // If successful, turn the weak_ref back into raw to prevent dropping.
+            // If successful, leak the weak ref to prevent dropping.
             let _ = weak_ref.into_raw();
         } else {
             // Otherwise, drop the key from the cache.
             let _ = unsafe { CACHED_INSTANCES.remove(&key) };
+            // TODO: If we drop this, make sure we don't need to unregister with BootServices.
         }
 
         strong_ref
     }
 
-    fn init_cached_instance(handle: efi::Handle) -> Option<Rc<Mutex<T>>> {
+    fn find_or_init_cached_instance(handle: efi::Handle) -> Option<Arc<Mutex<T>>> {
         Self::get_cached_instance(handle).or_else(|| {
-            // TODO: Return an option containing the Rc.
+            let bs = boot::uefi_bs();
+            let prot_ptr = bs.get_protocol(T::get_guid(), handle);
+
+            // TODO: Return an option containing the Arc.
             None
         })
     }
