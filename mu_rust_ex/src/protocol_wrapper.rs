@@ -2,7 +2,6 @@ use alloc::collections::BTreeMap;
 use alloc::sync::{Arc, Weak};
 use core::cmp::{Ord, Ordering, PartialOrd};
 use core::ops::{Deref, DerefMut};
-use core::ptr::NonNull;
 
 use r_efi::efi;
 use spin::Mutex;
@@ -59,7 +58,7 @@ impl Ord for ProtocolCacheKey {
 // NOTE: While we're not caring about multithreadedness, this is
 //      all well and good. As soon as we care about threading, this table ALSO
 //      needs to be wrapped in a Mutex.
-static mut CACHED_INSTANCES: BTreeMap<ProtocolCacheKey, NonNull<core::ffi::c_void>> =
+static mut CACHED_INSTANCES: BTreeMap<ProtocolCacheKey, *const core::ffi::c_void> =
     BTreeMap::new();
 
 pub struct ProtocolWrapper<T: ManagedProtocol> {
@@ -78,7 +77,7 @@ impl<T: ManagedProtocol<ProtocolType = T>> ProtocolWrapper<T> {
         let weak_ref = unsafe {
             let mutex_ptr = CACHED_INSTANCES
                 .get(&key)
-                .map(|nn_ref| (*nn_ref).as_ptr() as *const Mutex<T>)?;
+                .map(|ptr_ref| *ptr_ref as *const Mutex<T>)?;
             Weak::from_raw(mutex_ptr)
         };
         let strong_ref = weak_ref.upgrade();
@@ -97,10 +96,19 @@ impl<T: ManagedProtocol<ProtocolType = T>> ProtocolWrapper<T> {
     fn find_or_init_cached_instance(handle: efi::Handle) -> Option<Arc<Mutex<T>>> {
         Self::get_cached_instance(handle).or_else(|| {
             let bs = boot::uefi_bs();
-            let prot_ptr = bs.get_protocol(T::get_guid(), handle);
+            let prot_ptr = bs.get_protocol(T::get_guid(), handle).ok()?;
 
-            // TODO: Return an option containing the Arc.
-            None
+            T::init_protocol(prot_ptr, handle)
+                .map(|result| {
+                    let result = Arc::new(Mutex::new(result));
+                    let key = ProtocolCacheKey {
+                        guid: *T::get_guid(),
+                        handle,
+                    };
+                    unsafe { CACHED_INSTANCES.insert(key, Arc::downgrade(&result).into_raw() as *const _) };
+                    result
+                })
+                .ok()
         })
     }
 
@@ -110,18 +118,14 @@ impl<T: ManagedProtocol<ProtocolType = T>> ProtocolWrapper<T> {
         let prot_handles = bs.locate_protocol_handles(T::get_guid())?;
         let handle = prot_handles[0];
 
-        let prot_ptr = bs.get_protocol(T::get_guid(), handle)?;
         Ok(Self {
-            inner: T::init_protocol(prot_ptr, handle)?,
+            inner: Self::find_or_init_cached_instance(handle).ok_or(efi::Status::NOT_FOUND)?,
         })
     }
 
     pub fn by_handle(handle: efi::Handle) -> UefiResult<Self> {
-        let bs = boot::uefi_bs();
-
-        let prot_ptr = bs.get_protocol(T::get_guid(), handle)?;
         Ok(Self {
-            inner: T::init_protocol(prot_ptr, handle)?,
+            inner: Self::find_or_init_cached_instance(handle).ok_or(efi::Status::NOT_FOUND)?,
         })
     }
 }
@@ -142,7 +146,7 @@ impl<T: ManagedProtocol> Drop for ProtocolWrapper<T> {
     fn drop(&mut self) {
         // If the last two references are this one
         // and the one in the cache... then drop the cache.
-        if self.inner.strong_count() <= 2 {
+        if Arc::strong_count(&self.inner) == 1 {
             // TODO: Deregister with BootServices
             // TODO: Drop Rc from the cache
         }
