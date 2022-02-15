@@ -9,10 +9,10 @@ pub mod protocol_wrapper;
 pub mod runtime;
 pub mod shell_parameters_protocol;
 pub mod shell_protocol;
-pub mod util;
-pub mod variable;
 #[cfg(test)]
 mod test_data;
+pub mod util;
+pub mod variable;
 
 use r_efi::efi;
 

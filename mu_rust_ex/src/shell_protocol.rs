@@ -253,9 +253,7 @@ impl Protocol {
     pub fn flush_file(&self, handle: FileHandle) -> MPResult<()> {
         let prot = self.inner.ok_or(MPError::Unregistered)?;
 
-        let status = (prot.flush_file)(
-            handle,
-        );
+        let status = (prot.flush_file)(handle);
 
         if !status.is_error() {
             Ok(())
@@ -267,9 +265,7 @@ impl Protocol {
     pub fn close_file(&self, handle: FileHandle) -> MPResult<()> {
         let prot = self.inner.ok_or(MPError::Unregistered)?;
 
-        let status = (prot.close_file)(
-            handle,
-        );
+        let status = (prot.close_file)(handle);
 
         if !status.is_error() {
             Ok(())

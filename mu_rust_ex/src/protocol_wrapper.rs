@@ -1,8 +1,8 @@
+use alloc::collections::BTreeMap;
+use alloc::sync::{Arc, Weak};
+use core::cmp::{Ord, Ordering, PartialOrd};
 use core::ops::{Deref, DerefMut};
 use core::ptr::NonNull;
-use alloc::sync::{Arc, Weak};
-use alloc::collections::BTreeMap;
-use core::cmp::{Ord, PartialOrd, Ordering};
 
 use r_efi::efi;
 use spin::Mutex;
@@ -59,7 +59,8 @@ impl Ord for ProtocolCacheKey {
 // NOTE: While we're not caring about multithreadedness, this is
 //      all well and good. As soon as we care about threading, this table ALSO
 //      needs to be wrapped in a Mutex.
-static mut CACHED_INSTANCES: BTreeMap<ProtocolCacheKey, NonNull<core::ffi::c_void>> = BTreeMap::new();
+static mut CACHED_INSTANCES: BTreeMap<ProtocolCacheKey, NonNull<core::ffi::c_void>> =
+    BTreeMap::new();
 
 pub struct ProtocolWrapper<T: ManagedProtocol> {
     inner: Arc<Mutex<T>>,
@@ -69,13 +70,14 @@ impl<T: ManagedProtocol<ProtocolType = T>> ProtocolWrapper<T> {
     fn get_cached_instance(handle: efi::Handle) -> Option<Arc<Mutex<T>>> {
         let key = ProtocolCacheKey {
             guid: *T::get_guid(),
-            handle
+            handle,
         };
         // TODO: Add a note about why this is safe-ish.
         // TODO: Add a note to ALL unsafes about what the expectations are and
         //       why it should be safe.
         let weak_ref = unsafe {
-            let mutex_ptr = CACHED_INSTANCES.get(&key)
+            let mutex_ptr = CACHED_INSTANCES
+                .get(&key)
                 .map(|nn_ref| (*nn_ref).as_ptr() as *const Mutex<T>)?;
             Weak::from_raw(mutex_ptr)
         };
