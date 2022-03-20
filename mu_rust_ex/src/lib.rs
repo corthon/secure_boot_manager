@@ -2,10 +2,13 @@
 
 extern crate alloc;
 
+#[macro_use]
+extern crate lazy_static;
+
 pub mod auth_variable;
 pub mod boot;
 pub mod image_authentication;
-pub mod protocol_wrapper;
+mod protocol_utility;
 pub mod runtime;
 pub mod shell_parameters_protocol;
 pub mod shell_protocol;
