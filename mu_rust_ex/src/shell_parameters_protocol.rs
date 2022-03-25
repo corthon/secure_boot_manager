@@ -2,16 +2,18 @@
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 
-use crate::alloc::string::String;
-use crate::alloc::vec::Vec;
-use crate::protocol_wrapper::{
-    ManagedProtocol, ManagedProtocolError as MPError, ManagedProtocolResult as MPResult,
+use crate::protocol_utility::{
+    ManagedProtocol, RustProtocol, RustProtocolError as RPError, RustProtocolResult as RPResult,
 };
 use crate::shell_protocol;
+
+use alloc::string::String;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+
 use r_efi::efi;
 use r_efi_string::str16::EfiStr16;
-
-use crate::UefiResult;
+use spin::Mutex;
 
 pub const PROTOCOL_NAME: &str = "EfiShellParametersProtocol";
 pub const PROTOCOL_GUID: efi::Guid = efi::Guid::from_fields(
@@ -24,7 +26,7 @@ pub const PROTOCOL_GUID: efi::Guid = efi::Guid::from_fields(
 );
 
 #[repr(C)]
-struct RawProtocol {
+pub struct RawProtocol {
     pub argv: *const *const efi::Char16,
     pub argc: usize,
     pub std_in: shell_protocol::FileHandle,
@@ -33,15 +35,15 @@ struct RawProtocol {
 }
 
 pub struct Protocol {
-    inner: Option<&'static RawProtocol>,
-    handle: efi::Handle,
+    inner: Arc<Mutex<Option<ManagedProtocol<RawProtocol>>>>,
 }
 
 impl Protocol {
     // NOTE: It's important that these all return ManagedProtocolError::Unregistered
     //       if the Option has been taken.
-    pub fn get_args(&self) -> MPResult<Vec<String>> {
-        let prot = self.inner.ok_or(MPError::Unregistered)?;
+    pub fn get_args(&self) -> RPResult<Vec<String>> {
+        let prot_guard = self.inner.lock();
+        let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
 
         let result: Vec<String> = (0..prot.argc)
             .map(|i| unsafe { EfiStr16::from_ptr(*prot.argv.add(i)).to_string_lossy() })
@@ -51,9 +53,8 @@ impl Protocol {
 }
 
 // TODO: Make this into a macro or a derive.
-impl ManagedProtocol for Protocol {
-    type ProtocolType = Self;
-
+impl RustProtocol for Protocol {
+    type RawProtocol = RawProtocol;
     fn get_name() -> &'static str {
         PROTOCOL_NAME
     }
@@ -61,21 +62,7 @@ impl ManagedProtocol for Protocol {
         &PROTOCOL_GUID
     }
 
-    fn init_protocol(
-        prot: *mut core::ffi::c_void,
-        handle: efi::Handle,
-    ) -> UefiResult<Self::ProtocolType> {
-        Ok(Self {
-            inner: unsafe { (prot as *const RawProtocol).as_ref() },
-            handle,
-        })
-    }
-
-    fn get_handle(&self) -> efi::Handle {
-        self.handle
-    }
-
-    fn deinit_protocol(&mut self) {
-        self.inner = None;
+    fn init_protocol(mp: Arc<Mutex<Option<ManagedProtocol<RawProtocol>>>>) -> RPResult<Self> {
+        Ok(Self { inner: mp })
     }
 }
