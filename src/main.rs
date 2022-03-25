@@ -8,11 +8,13 @@ extern crate uefi;
 use alloc::string::String;
 use core::cell::RefCell;
 use core::ptr::NonNull;
-use mu_rust_ex::protocol_wrapper::ProtocolWrapper;
 use r_efi::efi;
 
 use core_con_out::println;
-use mu_rust_ex::{shell_parameters_protocol, shell_protocol, UefiResult};
+use mu_rust_ex::{
+    protocol_utility::RustProtocol, shell_parameters_protocol::Protocol as ShellParametersProtocol,
+    shell_protocol::Protocol as ShellProtocol, UefiResult,
+};
 
 #[allow(dead_code)]
 struct AppInstance {
@@ -36,8 +38,7 @@ impl AppInstance {
     pub fn main(&mut self) -> UefiResult<()> {
         println!("WELCOME TO THE APP!");
 
-        let shell_params =
-            ProtocolWrapper::<shell_parameters_protocol::Protocol>::by_handle(self.h)?;
+        let shell_params = ShellParametersProtocol::by_handle(self.h)?;
         let args = shell_params.get_args()?;
         println!("{:?}", args);
 
@@ -60,7 +61,7 @@ impl AppInstance {
         match output_file {
             None => (),
             Some(of) => {
-                let shell = ProtocolWrapper::<shell_protocol::Protocol>::first()?;
+                let shell = ShellProtocol::first()?;
                 let file_handle = shell.create_file(
                     &of,
                     r_efi::protocols::file::MODE_CREATE | r_efi::protocols::file::MODE_WRITE,
