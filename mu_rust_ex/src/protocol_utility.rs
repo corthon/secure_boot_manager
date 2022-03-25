@@ -105,9 +105,10 @@ mod manager {
         }
     }
     // TODO: Implement Drop for this.
+    // https://doc.rust-lang.org/std/sync/struct.Arc.html#method.strong_count
 
-    type CacheEntry = Arc<Mutex<ManagedProtocol<AnyProtocol>>>;
-    type InternalCacheEntry = Weak<Mutex<ManagedProtocol<AnyProtocol>>>;
+    type CacheEntry = Arc<Mutex<Option<ManagedProtocol<AnyProtocol>>>>;
+    type InternalCacheEntry = Weak<Mutex<Option<ManagedProtocol<AnyProtocol>>>>;
     lazy_static! {
         static ref PROTOCOL_CACHE: Mutex<BTreeMap<ProtocolCacheKey, InternalCacheEntry>> =
             Mutex::new(BTreeMap::new());
@@ -136,11 +137,11 @@ mod manager {
         get_cached_instance(handle, guid).or_else(|| {
             let bs = boot::uefi_bs();
             let prot_ptr = bs.get_protocol(guid, handle).ok()?;
-            let cache_entry: CacheEntry = Arc::new(Mutex::new(ManagedProtocol {
+            let cache_entry: CacheEntry = Arc::new(Mutex::new(Some(ManagedProtocol {
                 ptr: EfiProtocolPtr::try_from(prot_ptr).unwrap(),
                 guid: *guid,
                 handle: handle.into(),
-            }));
+            })));
             let key = ProtocolCacheKey {
                 guid: *guid,
                 handle: handle.into(),
@@ -156,12 +157,35 @@ mod manager {
 }
 pub use manager::ManagedProtocol;
 
+#[derive(Debug, Copy, Clone)]
+pub enum RustProtocolError {
+    Unregistered,
+    Efi(efi::Status),
+}
+impl From<RustProtocolError> for efi::Status {
+    fn from(f: RustProtocolError) -> Self {
+        match f {
+            RustProtocolError::Unregistered => efi::Status::MEDIA_CHANGED,
+            RustProtocolError::Efi(x) => x,
+        }
+    }
+}
+impl From<efi::Status> for RustProtocolError {
+    fn from(f: efi::Status) -> Self {
+        Self::Efi(f)
+    }
+}
+pub type RustProtocolResult<T> = Result<T, RustProtocolError>;
+
 pub trait RustProtocol: Sized {
+    type RawProtocol;
     fn get_name() -> &'static str;
     fn get_guid() -> &'static efi::Guid;
-    fn init_protocol(mp: Arc<Mutex<ManagedProtocol<AnyProtocol>>>) -> UefiResult<Self>;
+    fn init_protocol(
+        mp: Arc<Mutex<Option<ManagedProtocol<Self::RawProtocol>>>>,
+    ) -> RustProtocolResult<Self>;
 
-    fn first() -> UefiResult<Self> {
+    fn first() -> RustProtocolResult<Self> {
         let bs = boot::uefi_bs();
         let prot_handles = bs.locate_protocol_handles(Self::get_guid())?;
         let handle = prot_handles[0];
@@ -169,9 +193,19 @@ pub trait RustProtocol: Sized {
         Self::by_handle(handle)
     }
 
-    fn by_handle(handle: efi::Handle) -> UefiResult<Self> {
-        let arc_mp = manager::find_or_init_cached_instance(handle, Self::get_guid())
+    fn by_handle(handle: efi::Handle) -> RustProtocolResult<Self> {
+        type ArcMutOpManProt<T> = Arc<Mutex<Option<ManagedProtocol<T>>>>;
+
+        let arc_mp_any = manager::find_or_init_cached_instance(handle, Self::get_guid())
             .ok_or(efi::Status::NOT_FOUND)?;
+        // Why is this safe?
+        // Well... either we originally found a matching protocol, or not.
+        // If there were ever some disconnect, this would be almost impossible to figure out.
+        let arc_mp = unsafe {
+            core::mem::transmute::<ArcMutOpManProt<AnyProtocol>, ArcMutOpManProt<Self::RawProtocol>>(
+                arc_mp_any,
+            )
+        };
         Self::init_protocol(arc_mp)
     }
 }

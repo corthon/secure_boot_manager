@@ -2,12 +2,14 @@
 //
 // SPDX-License-Identifier: BSD-2-Clause-Patent
 
-use crate::protocol_wrapper::{
-    ManagedProtocol, ManagedProtocolError as MPError, ManagedProtocolResult as MPResult,
+use crate::protocol_utility::{
+    ManagedProtocol, RustProtocol, RustProtocolError as RPError, RustProtocolResult as RPResult,
 };
-use crate::UefiResult;
+
+use alloc::sync::Arc;
 
 use r_efi::{efi, eficall, eficall_abi};
+use spin::Mutex;
 use string::OsString;
 
 pub const PROTOCOL_NAME: &str = "EfiShellProtocol";
@@ -183,13 +185,13 @@ pub const DEVICE_NAME_USE_COMPONENT_NAME: DeviceNameFlags = 0x00000001;
 pub const DEVICE_NAME_USE_DEVICE_PATH: DeviceNameFlags = 0x00000002;
 
 pub struct Protocol {
-    inner: Option<&'static RawProtocol>,
-    handle: efi::Handle,
+    inner: Arc<Mutex<Option<ManagedProtocol<RawProtocol>>>>,
 }
 
 impl Protocol {
-    pub fn create_file(&self, name: &str, mode: u64) -> MPResult<FileHandle> {
-        let prot = self.inner.ok_or(MPError::Unregistered)?;
+    pub fn create_file(&self, name: &str, mode: u64) -> RPResult<FileHandle> {
+        let prot_guard = self.inner.lock();
+        let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
         let efi_name = OsString::from(name);
         let mut handle: FileHandle = core::ptr::null_mut();
 
@@ -198,12 +200,13 @@ impl Protocol {
         if !status.is_error() {
             Ok(handle)
         } else {
-            Err(MPError::Efi(status))
+            Err(RPError::Efi(status))
         }
     }
 
-    pub fn open_file_by_name(&self, name: &str, mode: u64) -> MPResult<FileHandle> {
-        let prot = self.inner.ok_or(MPError::Unregistered)?;
+    pub fn open_file_by_name(&self, name: &str, mode: u64) -> RPResult<FileHandle> {
+        let prot_guard = self.inner.lock();
+        let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
         let efi_name = OsString::from(name);
         let mut handle: FileHandle = core::ptr::null_mut();
 
@@ -212,12 +215,13 @@ impl Protocol {
         if !status.is_error() {
             Ok(handle)
         } else {
-            Err(MPError::Efi(status))
+            Err(RPError::Efi(status))
         }
     }
 
-    pub fn read_file(&self, handle: FileHandle, buffer: &mut [u8]) -> MPResult<usize> {
-        let prot = self.inner.ok_or(MPError::Unregistered)?;
+    pub fn read_file(&self, handle: FileHandle, buffer: &mut [u8]) -> RPResult<usize> {
+        let prot_guard = self.inner.lock();
+        let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
         let mut read_size: usize = buffer.len();
 
         let status = (prot.read_file)(
@@ -229,12 +233,13 @@ impl Protocol {
         if !status.is_error() {
             Ok(read_size)
         } else {
-            Err(MPError::Efi(status))
+            Err(RPError::Efi(status))
         }
     }
 
-    pub fn write_file(&self, handle: FileHandle, buffer: &[u8]) -> MPResult<usize> {
-        let prot = self.inner.ok_or(MPError::Unregistered)?;
+    pub fn write_file(&self, handle: FileHandle, buffer: &[u8]) -> RPResult<usize> {
+        let prot_guard = self.inner.lock();
+        let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
         let mut write_size: usize = buffer.len();
 
         let status = (prot.write_file)(
@@ -246,39 +251,40 @@ impl Protocol {
         if !status.is_error() {
             Ok(write_size)
         } else {
-            Err(MPError::Efi(status))
+            Err(RPError::Efi(status))
         }
     }
 
-    pub fn flush_file(&self, handle: FileHandle) -> MPResult<()> {
-        let prot = self.inner.ok_or(MPError::Unregistered)?;
+    pub fn flush_file(&self, handle: FileHandle) -> RPResult<()> {
+        let prot_guard = self.inner.lock();
+        let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
 
         let status = (prot.flush_file)(handle);
 
         if !status.is_error() {
             Ok(())
         } else {
-            Err(MPError::Efi(status))
+            Err(RPError::Efi(status))
         }
     }
 
-    pub fn close_file(&self, handle: FileHandle) -> MPResult<()> {
-        let prot = self.inner.ok_or(MPError::Unregistered)?;
+    pub fn close_file(&self, handle: FileHandle) -> RPResult<()> {
+        let prot_guard = self.inner.lock();
+        let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
 
         let status = (prot.close_file)(handle);
 
         if !status.is_error() {
             Ok(())
         } else {
-            Err(MPError::Efi(status))
+            Err(RPError::Efi(status))
         }
     }
 }
 
 // TODO: Make this into a macro or a derive.
-impl ManagedProtocol for Protocol {
-    type ProtocolType = Self;
-
+impl RustProtocol for Protocol {
+    type RawProtocol = RawProtocol;
     fn get_name() -> &'static str {
         PROTOCOL_NAME
     }
@@ -286,21 +292,7 @@ impl ManagedProtocol for Protocol {
         &PROTOCOL_GUID
     }
 
-    fn init_protocol(
-        prot: *mut core::ffi::c_void,
-        handle: efi::Handle,
-    ) -> UefiResult<Self::ProtocolType> {
-        Ok(Self {
-            inner: unsafe { (prot as *const RawProtocol).as_ref() },
-            handle,
-        })
-    }
-
-    fn get_handle(&self) -> efi::Handle {
-        self.handle
-    }
-
-    fn deinit_protocol(&mut self) {
-        self.inner = None;
+    fn init_protocol(mp: Arc<Mutex<Option<ManagedProtocol<RawProtocol>>>>) -> RPResult<Self> {
+        Ok(Self { inner: mp })
     }
 }
