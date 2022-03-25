@@ -3,7 +3,7 @@ use alloc::sync::Arc;
 use r_efi::efi;
 use spin::Mutex;
 
-use crate::{boot, UefiResult};
+use crate::boot;
 
 mod ptr {
     use core::cmp::{Ord, PartialOrd};
@@ -43,7 +43,7 @@ mod ptr {
     }
     impl<T> From<EfiProtocolPtr<T>> for *mut T {
         fn from(f: EfiProtocolPtr<T>) -> Self {
-            unsafe { f.0.as_ptr() }
+            f.0.as_ptr()
         }
     }
     impl<T> TryFrom<*mut T> for EfiProtocolPtr<T> {

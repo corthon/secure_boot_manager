@@ -19,6 +19,7 @@ pub mod variable;
 
 use r_efi::efi;
 
+#[allow(unused)]
 use core_con_out::println;
 
 pub type UefiResult<T> = Result<T, efi::Status>;
