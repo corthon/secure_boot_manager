@@ -7,6 +7,8 @@ use crate::protocol_utility::{
 };
 
 use alloc::sync::Arc;
+use alloc::vec::Vec;
+use core::convert::TryInto;
 
 use r_efi::{efi, eficall, eficall_abi};
 use spin::Mutex;
@@ -145,9 +147,18 @@ pub struct RawProtocol {
     pub flush_file: eficall! {fn(
         FileHandle,
     ) -> efi::Status},
-    //   EFI_SHELL_FIND_FILES                      FindFiles;
-    //   EFI_SHELL_FIND_FILES_IN_DIR               FindFilesInDir;
-    //   EFI_SHELL_GET_FILE_SIZE                   GetFileSize;
+    pub find_files: eficall! {fn(
+        *const efi::Char16,
+        *mut *mut FileInfo,
+    ) -> efi::Status},
+    pub find_files_in_dir: eficall! {fn(
+        FileHandle,
+        *mut *mut FileInfo,
+    ) -> efi::Status},
+    pub get_file_size: eficall! {fn(
+        FileHandle,
+        *mut u64,
+    ) -> efi::Status},
     //   EFI_SHELL_OPEN_ROOT                       OpenRoot;
     //   EFI_SHELL_OPEN_ROOT_BY_HANDLE             OpenRootByHandle;
     //   EFI_EVENT                                 ExecutionBreak;
@@ -287,6 +298,22 @@ impl Protocol {
             Err(RPError::Efi(status))
         }
     }
+
+    fn get_file_size(&self, handle: FileHandle) -> RPResult<usize> {
+        let prot_guard = self.inner.lock();
+        let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
+
+        let mut out_size: u64 = 0;
+        let status = (prot.get_file_size)(handle, &mut out_size as *mut _);
+
+        if !status.is_error() {
+            Ok(out_size
+                .try_into()
+                .map_err(|_| RPError::Efi(efi::Status::LOAD_ERROR))?)
+        } else {
+            Err(RPError::Efi(status))
+        }
+    }
 }
 
 pub struct ShellFile {
@@ -297,13 +324,25 @@ impl ShellFile {
     pub fn read(&self, buffer: &mut [u8]) -> RPResult<usize> {
         self.protocol.read_file(self.handle, buffer)
     }
+    pub fn read_count(&self, count: usize) -> RPResult<Vec<u8>> {
+        let actual_count = core::cmp::min(count, self.get_size()?);
+        let mut buffer = Vec::<u8>::with_capacity(actual_count);
+        // Init the size pre-emptively to allow the read into the buffer.
+        unsafe { buffer.set_len(actual_count) };
 
+        let read_size = self.read(&mut buffer)?;
+        unsafe { buffer.set_len(read_size) };
+
+        Ok(buffer)
+    }
     pub fn write(&mut self, buffer: &[u8]) -> RPResult<usize> {
         self.protocol.write_file(self.handle, buffer)
     }
-
     pub fn flush(&mut self) -> RPResult<()> {
         self.protocol.flush_file(self.handle)
+    }
+    pub fn get_size(&self) -> RPResult<usize> {
+        self.protocol.get_file_size(self.handle)
     }
 }
 impl Drop for ShellFile {

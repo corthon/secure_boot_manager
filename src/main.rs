@@ -45,23 +45,26 @@ impl AppInstance {
 
         let mut iter = args.iter();
         let mut output_file: Option<String> = None;
-        let mut _input_file: Option<String> = None;
+        let mut input_file: Option<String> = None;
         loop {
             match iter.next() {
                 None => break,
                 Some(arg) => {
                     if arg.eq("-o") {
                         output_file = iter.next().map(|arg| String::from(arg));
+                    } else if arg.eq("-i") {
+                        input_file = iter.next().map(|arg| String::from(arg));
                     }
                 }
             }
         }
 
         println!("Output File: {:?}", output_file);
+        println!("Input File: {:?}", input_file);
 
-        if let Some(of) = output_file {
+        if let Some(ref ofile) = output_file {
             let mut file = shell.create_file(
-                &of,
+                ofile,
                 r_efi::protocols::file::MODE_CREATE | r_efi::protocols::file::MODE_WRITE,
             )?;
 
@@ -70,6 +73,13 @@ impl AppInstance {
                 Ok(_) => println!("File successfully written!"),
                 Err(e) => println!("Failed to write file! {:?}", e),
             };
+        }
+
+        if let Some(ref ifile) = input_file {
+            let file = shell.open_file_by_name(ifile, r_efi::protocols::file::MODE_READ)?;
+            println!("File size: {}", file.get_size()?);
+            let bytes = file.read_count(file.get_size()?)?;
+            println!("BYTES! {:?}", bytes);
         }
 
         Ok(())
