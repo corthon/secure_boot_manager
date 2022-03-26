@@ -184,12 +184,13 @@ pub type DeviceNameFlags = u32;
 pub const DEVICE_NAME_USE_COMPONENT_NAME: DeviceNameFlags = 0x00000001;
 pub const DEVICE_NAME_USE_DEVICE_PATH: DeviceNameFlags = 0x00000002;
 
+#[derive(Clone)]
 pub struct Protocol {
     inner: Arc<Mutex<Option<ManagedProtocol<RawProtocol>>>>,
 }
 
 impl Protocol {
-    pub fn create_file(&self, name: &str, mode: u64) -> RPResult<FileHandle> {
+    pub fn create_file(&self, name: &str, mode: u64) -> RPResult<ShellFile> {
         let prot_guard = self.inner.lock();
         let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
         let efi_name = OsString::from(name);
@@ -198,13 +199,16 @@ impl Protocol {
         let status = (prot.create_file)(efi_name.as_ptr(), mode, &mut handle as *mut _);
 
         if !status.is_error() {
-            Ok(handle)
+            Ok(ShellFile {
+                handle,
+                protocol: self.clone(),
+            })
         } else {
             Err(RPError::Efi(status))
         }
     }
 
-    pub fn open_file_by_name(&self, name: &str, mode: u64) -> RPResult<FileHandle> {
+    pub fn open_file_by_name(&self, name: &str, mode: u64) -> RPResult<ShellFile> {
         let prot_guard = self.inner.lock();
         let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
         let efi_name = OsString::from(name);
@@ -213,13 +217,16 @@ impl Protocol {
         let status = (prot.open_file_by_name)(efi_name.as_ptr(), &mut handle as *mut _, mode);
 
         if !status.is_error() {
-            Ok(handle)
+            Ok(ShellFile {
+                handle,
+                protocol: self.clone(),
+            })
         } else {
             Err(RPError::Efi(status))
         }
     }
 
-    pub fn read_file(&self, handle: FileHandle, buffer: &mut [u8]) -> RPResult<usize> {
+    fn read_file(&self, handle: FileHandle, buffer: &mut [u8]) -> RPResult<usize> {
         let prot_guard = self.inner.lock();
         let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
         let mut read_size: usize = buffer.len();
@@ -237,7 +244,7 @@ impl Protocol {
         }
     }
 
-    pub fn write_file(&self, handle: FileHandle, buffer: &[u8]) -> RPResult<usize> {
+    fn write_file(&self, handle: FileHandle, buffer: &[u8]) -> RPResult<usize> {
         let prot_guard = self.inner.lock();
         let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
         let mut write_size: usize = buffer.len();
@@ -255,7 +262,7 @@ impl Protocol {
         }
     }
 
-    pub fn flush_file(&self, handle: FileHandle) -> RPResult<()> {
+    fn flush_file(&self, handle: FileHandle) -> RPResult<()> {
         let prot_guard = self.inner.lock();
         let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
 
@@ -268,7 +275,7 @@ impl Protocol {
         }
     }
 
-    pub fn close_file(&self, handle: FileHandle) -> RPResult<()> {
+    fn close_file(&self, handle: FileHandle) -> RPResult<()> {
         let prot_guard = self.inner.lock();
         let prot = prot_guard.as_ref().ok_or(RPError::Unregistered)?;
 
@@ -279,6 +286,30 @@ impl Protocol {
         } else {
             Err(RPError::Efi(status))
         }
+    }
+}
+
+pub struct ShellFile {
+    protocol: Protocol,
+    handle: FileHandle,
+}
+impl ShellFile {
+    pub fn read(&self, buffer: &mut [u8]) -> RPResult<usize> {
+        self.protocol.read_file(self.handle, buffer)
+    }
+
+    pub fn write(&mut self, buffer: &[u8]) -> RPResult<usize> {
+        self.protocol.write_file(self.handle, buffer)
+    }
+
+    pub fn flush(&mut self) -> RPResult<()> {
+        self.protocol.flush_file(self.handle)
+    }
+}
+impl Drop for ShellFile {
+    fn drop(&mut self) {
+        _ = self.protocol.flush_file(self.handle);
+        _ = self.protocol.close_file(self.handle);
     }
 }
 

@@ -38,45 +38,39 @@ impl AppInstance {
     pub fn main(&mut self) -> UefiResult<()> {
         println!("WELCOME TO THE APP!");
 
+        let shell = ShellProtocol::first()?;
         let shell_params = ShellParametersProtocol::by_handle(self.h)?;
         let args = shell_params.get_args()?;
         println!("{:?}", args);
 
         let mut iter = args.iter();
         let mut output_file: Option<String> = None;
+        let mut _input_file: Option<String> = None;
         loop {
-            let arg = iter.next();
-            if arg.is_none() {
-                break;
-            }
-
-            let arg = arg.unwrap();
-            if arg.eq("-o") {
-                output_file = Some(String::from(iter.next().unwrap()));
+            match iter.next() {
+                None => break,
+                Some(arg) => {
+                    if arg.eq("-o") {
+                        output_file = iter.next().map(|arg| String::from(arg));
+                    }
+                }
             }
         }
 
         println!("Output File: {:?}", output_file);
 
-        match output_file {
-            None => (),
-            Some(of) => {
-                let shell = ShellProtocol::first()?;
-                let file_handle = shell.create_file(
-                    &of,
-                    r_efi::protocols::file::MODE_CREATE | r_efi::protocols::file::MODE_WRITE,
-                )?;
+        if let Some(of) = output_file {
+            let mut file = shell.create_file(
+                &of,
+                r_efi::protocols::file::MODE_CREATE | r_efi::protocols::file::MODE_WRITE,
+            )?;
 
-                let data: [u8; 4] = [0xDE, 0xAD, 0xBE, 0xEF];
-                match shell.write_file(file_handle, &data) {
-                    Ok(_) => println!("File successfully written!"),
-                    Err(e) => println!("Failed to write file! {:?}", e),
-                };
-
-                shell.flush_file(file_handle)?;
-                shell.close_file(file_handle)?;
-            }
-        };
+            let data: [u8; 4] = [0xDE, 0xAD, 0xBE, 0xEF];
+            match file.write(&data) {
+                Ok(_) => println!("File successfully written!"),
+                Err(e) => println!("Failed to write file! {:?}", e),
+            };
+        }
 
         Ok(())
     }
