@@ -5,7 +5,7 @@
 use crate::protocol_utility::{
     ManagedProtocol, RustProtocol, RustProtocolError as RPError, RustProtocolResult as RPResult,
 };
-use crate::shell_protocol;
+use crate::{shell_protocol, UefiResult};
 
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -62,7 +62,7 @@ impl RustProtocol for Protocol {
         &PROTOCOL_GUID
     }
 
-    fn init_protocol(mp: Arc<Mutex<Option<ManagedProtocol<RawProtocol>>>>) -> RPResult<Self> {
+    fn init_protocol(mp: Arc<Mutex<Option<ManagedProtocol<RawProtocol>>>>) -> UefiResult<Self> {
         Ok(Self { inner: mp })
     }
 }

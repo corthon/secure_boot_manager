@@ -3,7 +3,7 @@ use alloc::sync::Arc;
 use r_efi::efi;
 use spin::Mutex;
 
-use crate::boot;
+use crate::{boot, UefiResult};
 
 mod ptr {
     use core::cmp::{Ord, PartialOrd};
@@ -183,9 +183,9 @@ pub trait RustProtocol: Sized {
     fn get_guid() -> &'static efi::Guid;
     fn init_protocol(
         mp: Arc<Mutex<Option<ManagedProtocol<Self::RawProtocol>>>>,
-    ) -> RustProtocolResult<Self>;
+    ) -> UefiResult<Self>;
 
-    fn first() -> RustProtocolResult<Self> {
+    fn first() -> UefiResult<Self> {
         let bs = boot::uefi_bs();
         let prot_handles = bs.locate_protocol_handles(Self::get_guid())?;
         let handle = prot_handles[0];
@@ -193,7 +193,7 @@ pub trait RustProtocol: Sized {
         Self::by_handle(handle)
     }
 
-    fn by_handle(handle: efi::Handle) -> RustProtocolResult<Self> {
+    fn by_handle(handle: efi::Handle) -> UefiResult<Self> {
         type ArcMutOpManProt<T> = Arc<Mutex<Option<ManagedProtocol<T>>>>;
 
         let arc_mp_any = manager::find_or_init_cached_instance(handle, Self::get_guid())
