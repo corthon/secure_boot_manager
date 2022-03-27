@@ -50,6 +50,14 @@ The following features should be achievable (with some stretch goals == ?):
 - https://web.mit.edu/rust-lang_v1.25/arch/amd64_ubuntu1404/share/doc/rust/html/book/first-edition/ffi.html
 - http://jakegoulding.com/rust-ffi-omnibus/objects/
 
+- https://docs.rs/ring/latest/ring/signature/index.html
+- https://lib.rs/crates/ring
+- https://docs.rs/pkcs1/latest/pkcs1/struct.RsaPrivateKey.html#method.to_der
+
+- https://docs.microsoft.com/en-us/azure/iot-hub/tutorial-x509-self-sign
+
+- https://docs.rs/cbindgen/latest/cbindgen/
+
 ## Build Command
 
 ```bash
