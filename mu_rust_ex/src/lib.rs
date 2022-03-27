@@ -5,6 +5,8 @@ extern crate alloc;
 #[macro_use]
 extern crate lazy_static;
 
+// TODO: Can any of this be gated behind an "alloc" feature flag?
+
 pub mod auth_variable;
 pub mod boot;
 pub mod image_authentication;

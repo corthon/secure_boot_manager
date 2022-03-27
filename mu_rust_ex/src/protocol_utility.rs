@@ -87,6 +87,8 @@ mod manager {
         }
     }
 
+    // TODO: Gate the protocol "unregistration" infrastructure behind a feature flag
+
     pub struct ManagedProtocol<T> {
         ptr: EfiProtocolPtr<T>,
         guid: efi::Guid,
