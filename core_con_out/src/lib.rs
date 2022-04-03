@@ -33,8 +33,13 @@ static CON_OUT: Mutex<ConOut> = Mutex::new(ConOut {
 impl ConOut {
     pub unsafe fn init(st_ptr: *mut efi::SystemTable) -> UefiResult<()> {
         let st = st_ptr.as_ref().ok_or(efi::Status::INVALID_PARAMETER)?;
-        CON_OUT.lock().inner = NonNull::new(st.con_out);
-        Ok(())
+        let mut co_guard = CON_OUT.lock();
+        if co_guard.inner.is_some() {
+            Err(efi::Status::ALREADY_STARTED)
+        } else {
+            co_guard.inner = NonNull::new(st.con_out);
+            Ok(())
+        }
     }
 
     pub fn print(&mut self, out_string: &str) {
