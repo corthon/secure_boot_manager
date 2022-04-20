@@ -122,14 +122,10 @@ mod manager {
             handle: handle.into(),
         };
 
-        PROTOCOL_CACHE
-            .lock()
-            .get(&key)?
-            .upgrade()
-            .or_else(|| {
-                PROTOCOL_CACHE.lock().remove(&key);
-                None
-            })
+        PROTOCOL_CACHE.lock().get(&key)?.upgrade().or_else(|| {
+            PROTOCOL_CACHE.lock().remove(&key);
+            None
+        })
     }
 
     pub fn find_or_init_cached_instance(
