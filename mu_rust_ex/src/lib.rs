@@ -12,6 +12,7 @@ pub mod boot;
 pub mod image_authentication;
 pub mod protocol_utility;
 pub mod runtime;
+pub mod rustified;
 pub mod shell_parameters_protocol;
 pub mod shell_protocol;
 #[cfg(test)]
