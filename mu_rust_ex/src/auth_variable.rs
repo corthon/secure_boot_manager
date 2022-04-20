@@ -1,4 +1,9 @@
+use alloc::vec::Vec;
+
 use r_efi::efi;
+use string::OsString;
+
+use crate::{variable::EfiVariable, UefiResult};
 
 pub const EFI_SECURE_BOOT_ENABLE_DISABLE_GUID: efi::Guid = efi::Guid::from_fields(
     0xf0a30bc7,
@@ -144,3 +149,105 @@ pub const SECURE_BOOT_MODE_DISABLE: u8 = 0;
 
 pub const SETUP_MODE: u8 = 1;
 pub const USER_MODE: u8 = 0;
+
+#[derive(Debug, Clone)]
+pub struct EfiAuthVariable2 {
+    pub variable: EfiVariable,
+    pub time: efi::Time,
+}
+
+impl EfiAuthVariable2 {
+    pub fn get_tbs_data_size(&self) -> usize {
+        // This is deeply inefficient.
+        // A better solution might be to use setters and update an internal size.
+        (self.variable.name.chars().count() * core::mem::size_of::<efi::Char16>())
+            + core::mem::size_of::<efi::Guid>()
+            + core::mem::size_of::<u32>()
+            + core::mem::size_of::<efi::Time>()
+            + self.variable.data.len()
+    }
+
+    pub fn get_tbs_data_buffer(&self, buffer: &mut [u8]) -> UefiResult<usize> {
+        // Populate the variable_name.
+        let u16_str = OsString::from(self.variable.name.as_str());
+        let u16_str_wo_null = &u16_str.as_u16_slice()[..u16_str.len() - 1];
+        let (u16_bytes, remainder) =
+            buffer.split_at_mut(u16_str_wo_null.len() * core::mem::size_of::<u16>());
+        unsafe {
+            let slice_start = u16_bytes.as_mut_ptr();
+            let u16_slice =
+                core::slice::from_raw_parts_mut(slice_start as *mut u16, u16_str_wo_null.len());
+            u16_slice.copy_from_slice(u16_str_wo_null);
+        }
+
+        // Populate the guid.
+        let (guid_bytes, remainder) = remainder.split_at_mut(core::mem::size_of::<efi::Guid>());
+        guid_bytes.copy_from_slice(self.variable.guid.as_bytes());
+
+        // Populate the attributes.
+        let (attr_bytes, remainder) = remainder.split_at_mut(core::mem::size_of::<u32>());
+        unsafe {
+            let attr_u32 = attr_bytes.as_mut_ptr();
+            *(attr_u32 as *mut u32) = self.variable.attributes;
+        }
+
+        // Populate the timestamp.
+        let (time_bytes, data_bytes) = remainder.split_at_mut(core::mem::size_of::<efi::Time>());
+        unsafe {
+            let time_src_bytes = core::ptr::addr_of!(self.time) as *const u8;
+            time_bytes.copy_from_slice(core::slice::from_raw_parts(
+                time_src_bytes,
+                time_bytes.len(),
+            ));
+        }
+
+        // Populate the data.
+        data_bytes.copy_from_slice(&self.variable.data);
+
+        Ok(buffer.len())
+    }
+
+    pub fn get_tbs_data(&self) -> UefiResult<Vec<u8>> {
+        let tbs_size = self.get_tbs_data_size();
+        let mut data = Vec::<u8>::with_capacity(tbs_size);
+        // Safe because we're about to init this exact data.
+        unsafe { data.set_len(tbs_size) };
+        let actual_size = self.get_tbs_data_buffer(&mut data)?;
+        unsafe { data.set_len(actual_size) };
+        Ok(data)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{efi, EfiAuthVariable2, EfiVariable};
+
+    #[test]
+    fn auth_var_2_should_create_digest_to_sign() {
+        let test_var = EfiAuthVariable2 {
+            variable: EfiVariable {
+                name: String::from("TestVar"),
+                guid: crate::variable::EFI_GLOBAL_VARIABLE_GUID.clone(),
+                data: Vec::<u8>::from([0xDEu8, 0xADu8, 0xBEu8, 0xEFu8]),
+                attributes: (efi::VARIABLE_NON_VOLATILE | efi::VARIABLE_BOOTSERVICE_ACCESS),
+            },
+            time: crate::rustified::Time {
+                year: 2022,
+                month: 04,
+                day: 18,
+                ..Default::default()
+            }
+            .into(),
+        };
+
+        assert_eq!(
+            test_var.get_tbs_data().unwrap(),
+            &[
+                0x54, 0x00, 0x65, 0x00, 0x73, 0x00, 0x74, 0x00, 0x56, 0x00, 0x61, 0x00, 0x72, 0x00,
+                0x61, 0xDF, 0xE4, 0x8B, 0xCA, 0x93, 0xD2, 0x11, 0xAA, 0x0D, 0x00, 0xE0, 0x98, 0x03,
+                0x2B, 0x8C, 0x03, 0x00, 0x00, 0x00, 0xE6, 0x07, 0x04, 0x12, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xDE, 0xAD, 0xBE, 0xEF
+            ]
+        );
+    }
+}
