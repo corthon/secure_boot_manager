@@ -2,8 +2,8 @@
 #![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
-extern crate allocation;
-extern crate uefi;
+extern crate uefi_bs_allocator as uefi_allocator;
+extern crate panic;
 
 use alloc::string::String;
 use core::cell::RefCell;
@@ -95,9 +95,7 @@ pub extern "C" fn app_entry(h: efi::Handle, st: *mut efi::SystemTable) -> efi::S
         // Set up the console.
         let _ = ConOut::init(st);
         // Set up the allocator.
-        allocation::init(st);
-        // Set up BootServices.
-        uefi::services::boot::init_by_st(st);
+        let _ = uefi_allocator::init(st);
         // Setup the Ex lib.
         let _ = mu_rust_ex::init_lib(st);
     }

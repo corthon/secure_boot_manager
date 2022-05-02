@@ -3,15 +3,6 @@
 version = 3
 
 [[package]]
-name = "allocation"
-version = "0.1.0"
-source = "git+https://github.com/corthon/mu_rust.git?branch=personal/brbarkel/secure_boot_manager2#6384622f5f27ad1803ece7f634caf779774b2fda"
-dependencies = [
- "panic",
- "r-efi",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -94,12 +85,11 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 name = "secure-boot-manager"
 version = "0.1.0"
 dependencies = [
- "allocation",
  "core-con-out",
  "mu-rust-ex",
+ "panic",
  "r-efi",
- "string",
- "uefi",
+ "uefi-bs-allocator",
 ]
 
 [[package]]
@@ -130,4 +120,12 @@ dependencies = [
  "log",
  "r-efi",
  "string",
+]
+
+[[package]]
+name = "uefi-bs-allocator"
+version = "0.1.0"
+dependencies = [
+ "r-efi",
+ "spin 0.5.2",
 ]

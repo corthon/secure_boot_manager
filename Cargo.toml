@@ -19,19 +19,5 @@ panic = "abort"
 r-efi = "4.0.0"
 core-con-out = { path = 'core_con_out' }
 mu-rust-ex = { path = "mu_rust_ex" }
-
-[patch.'https://github.com/corthon/mu_rust.git']
+uefi-bs-allocator = { path = "uefi_bs_allocator" }
 panic = { path = 'panic' }
-
-[dependencies.uefi]
-git = "https://github.com/corthon/mu_rust.git"
-branch = "personal/brbarkel/secure_boot_manager2"
-#features = ["bs-intrinsics"]
-
-[dependencies.string]
-git = "https://github.com/corthon/mu_rust.git"
-branch = "personal/brbarkel/secure_boot_manager2"
-
-[dependencies.allocation]
-git = "https://github.com/corthon/mu_rust.git"
-branch = "personal/brbarkel/secure_boot_manager2"

@@ -29,7 +29,6 @@ static CON_OUT: Mutex<ConOut> = Mutex::new(ConOut {
     buffer: [0u16; CON_OUT_BUFFER_SIZE],
 });
 
-
 impl ConOut {
     pub unsafe fn init(st_ptr: *mut efi::SystemTable) -> UefiResult<()> {
         let st = st_ptr.as_ref().ok_or(efi::Status::INVALID_PARAMETER)?;
@@ -82,7 +81,10 @@ pub unsafe fn print_panic(args: ::core::fmt::Arguments) {
 
 #[doc(hidden)]
 pub fn _print(args: ::core::fmt::Arguments) {
-    CON_OUT.lock().write_fmt(args).expect("error in ConOut write");
+    CON_OUT
+        .lock()
+        .write_fmt(args)
+        .expect("error in ConOut write");
 }
 
 #[macro_export]
