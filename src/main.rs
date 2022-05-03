@@ -6,15 +6,111 @@ extern crate panic;
 extern crate uefi_bs_allocator as uefi_allocator;
 
 use alloc::string::String;
+use core::fmt::Write;
 use core::ptr::NonNull;
+use menu::*;
 use r_efi::efi;
 
-use core_con_out::println;
+use core_con_out::{print, println};
 use mu_rust_ex::{
-    con_in::ConIn, protocol_utility::RustProtocol,
+    con_in::ConIn, con_in::InputKey, protocol_utility::RustProtocol,
     shell_parameters_protocol::Protocol as ShellParametersProtocol,
     shell_protocol::Protocol as ShellProtocol, UefiResult,
 };
+
+struct PrintOutput;
+impl core::fmt::Write for PrintOutput {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        print!("{}", s);
+        Ok(())
+    }
+}
+
+const ROOT_MENU: Menu<PrintOutput> = Menu {
+    label: "root",
+    items: &[
+        &Item {
+            item_type: ItemType::Callback {
+                function: select_bar,
+                parameters: &[],
+            },
+            command: "bar",
+            help: Some("fandoggles a bar"),
+        },
+        &Item {
+            item_type: ItemType::Menu(&Menu {
+                label: "sub",
+                items: &[
+                    &Item {
+                        item_type: ItemType::Callback {
+                            function: select_baz,
+                            parameters: &[],
+                        },
+                        command: "baz",
+                        help: Some("thingamobob a baz"),
+                    },
+                    &Item {
+                        item_type: ItemType::Callback {
+                            function: select_quux,
+                            parameters: &[],
+                        },
+                        command: "quux",
+                        help: Some("maximum quux"),
+                    },
+                ],
+                entry: Some(enter_sub),
+                exit: Some(exit_sub),
+            }),
+            command: "sub",
+            help: Some("enter sub-menu"),
+        },
+    ],
+    entry: Some(enter_root),
+    exit: Some(exit_root),
+};
+
+fn enter_root(_menu: &Menu<PrintOutput>, context: &mut PrintOutput) {
+    writeln!(context, "In enter_root").unwrap();
+}
+
+fn exit_root(_menu: &Menu<PrintOutput>, context: &mut PrintOutput) {
+    writeln!(context, "In exit_root").unwrap();
+}
+
+fn select_bar<'a>(
+    _menu: &Menu<PrintOutput>,
+    _item: &Item<PrintOutput>,
+    args: &[&str],
+    context: &mut PrintOutput,
+) {
+    writeln!(context, "In select_bar. Args = {:?}", args).unwrap();
+}
+
+fn enter_sub(_menu: &Menu<PrintOutput>, context: &mut PrintOutput) {
+    writeln!(context, "In enter_sub").unwrap();
+}
+
+fn exit_sub(_menu: &Menu<PrintOutput>, context: &mut PrintOutput) {
+    writeln!(context, "In exit_sub").unwrap();
+}
+
+fn select_baz<'a>(
+    _menu: &Menu<PrintOutput>,
+    _item: &Item<PrintOutput>,
+    args: &[&str],
+    context: &mut PrintOutput,
+) {
+    writeln!(context, "In select_baz: Args = {:?}", args).unwrap();
+}
+
+fn select_quux<'a>(
+    _menu: &Menu<PrintOutput>,
+    _item: &Item<PrintOutput>,
+    args: &[&str],
+    context: &mut PrintOutput,
+) {
+    writeln!(context, "In select_quux: Args = {:?}", args).unwrap();
+}
 
 #[allow(dead_code)]
 struct AppInstance {
@@ -80,8 +176,20 @@ impl AppInstance {
         }
 
         let con_in = unsafe { ConIn::new(self.st.as_ptr())? };
-        for _ in 0..5 {
-            println!("Output char '{}'", con_in.get_char()?);
+        let mut buffer = [0u8; 64];
+        let mut r = Runner::new(&ROOT_MENU, &mut buffer, PrintOutput);
+        loop {
+            match con_in.get_char()? {
+                InputKey::Char('\n') => r.input_byte(b'\n'),
+                InputKey::Char(c) => {
+                    let mut buf = [0; 4];
+                    for b in c.encode_utf8(&mut buf).bytes() {
+                        r.input_byte(b);
+                    }
+                }
+                InputKey::Ctrl(0x17) => break,
+                _ => (),
+            }
         }
 
         Ok(())

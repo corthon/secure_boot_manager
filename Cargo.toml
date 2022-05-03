@@ -21,3 +21,4 @@ core-con-out = { path = 'core_con_out' }
 mu-rust-ex = { path = "mu_rust_ex" }
 uefi-bs-allocator = { path = "uefi_bs_allocator" }
 panic = { path = 'panic' }
+menu = "*"
