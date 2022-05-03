@@ -8,6 +8,6 @@ use core_con_out::print_panic;
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
-    unsafe { print_panic(format_args!("{}\r\n", info)) };
+    unsafe { print_panic(format_args!("{}\n", info)) };
     loop {} // TODO: Try to replace with an exit of sorts.
 }

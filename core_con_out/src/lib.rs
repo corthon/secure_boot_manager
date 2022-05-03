@@ -56,6 +56,13 @@ impl ConOut {
                 if i > (self.buffer.len() - 2) {
                     break;
                 }
+                if utf8byte == b'\n' {
+                    self.buffer[i] = b'\r' as u16;
+                    i += 1;
+                    if i > (self.buffer.len() - 2) {
+                        break;
+                    }
+                }
             }
             self.buffer[i] = 0u16;
 
@@ -94,6 +101,6 @@ macro_rules! print {
 
 #[macro_export]
 macro_rules! println {
-    () => ($crate::print!("\r\n"));
-    ($($arg:tt)*) => ($crate::print!("{}\r\n", format_args!($($arg)*)));
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
 }
