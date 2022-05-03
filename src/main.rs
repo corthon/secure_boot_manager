@@ -2,24 +2,24 @@
 #![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
-extern crate uefi_bs_allocator as uefi_allocator;
 extern crate panic;
+extern crate uefi_bs_allocator as uefi_allocator;
 
 use alloc::string::String;
-use core::cell::RefCell;
 use core::ptr::NonNull;
 use r_efi::efi;
 
 use core_con_out::println;
 use mu_rust_ex::{
-    protocol_utility::RustProtocol, shell_parameters_protocol::Protocol as ShellParametersProtocol,
+    con_in::ConIn, protocol_utility::RustProtocol,
+    shell_parameters_protocol::Protocol as ShellParametersProtocol,
     shell_protocol::Protocol as ShellProtocol, UefiResult,
 };
 
 #[allow(dead_code)]
 struct AppInstance {
     h: efi::Handle,
-    st: RefCell<NonNull<efi::SystemTable>>,
+    st: NonNull<efi::SystemTable>,
 }
 
 // TODO: Possibly make this AppInstance a shared static.
@@ -28,11 +28,8 @@ struct AppInstance {
 #[allow(dead_code)]
 impl AppInstance {
     pub fn init(h: efi::Handle, st: *mut efi::SystemTable) -> UefiResult<Self> {
-        let st_inner = NonNull::new(st).ok_or(efi::Status::INVALID_PARAMETER)?;
-        Ok(Self {
-            st: RefCell::new(st_inner),
-            h,
-        })
+        let st = NonNull::new(st).ok_or(efi::Status::INVALID_PARAMETER)?;
+        Ok(Self { st, h })
     }
 
     pub fn main(&mut self) -> UefiResult<()> {
@@ -80,6 +77,11 @@ impl AppInstance {
             println!("File size: {}", file.get_size()?);
             let bytes = file.read_count(file.get_size()?)?;
             println!("BYTES! {:?}", bytes);
+        }
+
+        let con_in = unsafe { ConIn::new(self.st.as_ptr())? };
+        for _ in 0..5 {
+            println!("Output char '{}'", con_in.get_char()?);
         }
 
         Ok(())

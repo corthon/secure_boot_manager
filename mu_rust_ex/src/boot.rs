@@ -132,4 +132,23 @@ impl BootServices {
             Err(status)
         }
     }
+
+    pub fn wait_for_event(&self, events: &[efi::Event]) -> UefiResult<usize> {
+        let bs = unsafe { self.inner.as_ref() };
+        let mut index: usize = 0;
+        let mut local_events = Vec::new();
+        local_events.extend_from_slice(&events);
+
+        let status = (bs.wait_for_event)(
+            local_events.len(),
+            local_events.as_mut_ptr() as *mut *mut _,
+            &mut index as *mut _,
+        );
+
+        if !status.is_error() {
+            Ok(index)
+        } else {
+            Err(status)
+        }
+    }
 }

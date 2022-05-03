@@ -9,6 +9,7 @@ extern crate lazy_static;
 
 pub mod auth_variable;
 pub mod boot;
+pub mod con_in;
 pub mod image_authentication;
 pub mod protocol_utility;
 pub mod runtime;
