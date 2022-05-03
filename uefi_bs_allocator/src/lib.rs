@@ -50,7 +50,7 @@ impl BsAllocator {
             None => {
                 *guard = bs_ptr;
                 Ok(())
-            },
+            }
         }
     }
 }
