@@ -11,8 +11,4 @@ r-efi-string = "*"
 core-con-out = { path = "../core_con_out" }
 spin = "*"
 lazy_static = { version = "*", features = ['spin_no_std'] }
-
-# TODO: Eliminate this dependency.
-[dependencies.string]
-git = "https://github.com/corthon/mu_rust.git"
-branch = "personal/brbarkel/secure_boot_manager2"
+string = { path = "../string" }
