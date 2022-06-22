@@ -26,12 +26,9 @@ The following features should be achievable (with some stretch goals == ?):
 
 ## Low-Level TODOs
 
-- Write a Rust wrapper for files
 - Parse SigLists
 - Figure out how to sign
   - EDK2 SharedCrypto?
-- Figure out a better way to interact with the user
-  - ConIn/ConOut wrapper? Ncurses?
 - Wrapper for walking PCI
 - Wrapper for walking FSes
 - Way to request a ConnectAll?

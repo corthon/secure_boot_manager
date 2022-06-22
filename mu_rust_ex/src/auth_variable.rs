@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 use r_efi::efi;
 use string::OsString;
 
-use crate::{variable::EfiVariable, UefiResult};
+use crate::{variable::EfiVariable, UefiResult, rustified};
 
 pub const EFI_SECURE_BOOT_ENABLE_DISABLE_GUID: efi::Guid = efi::Guid::from_fields(
     0xf0a30bc7,
@@ -153,7 +153,7 @@ pub const USER_MODE: u8 = 0;
 #[derive(Debug, Clone)]
 pub struct EfiAuthVariable2 {
     pub variable: EfiVariable,
-    pub time: efi::Time,
+    pub time: rustified::Time,
 }
 
 impl EfiAuthVariable2 {
@@ -193,8 +193,9 @@ impl EfiAuthVariable2 {
 
         // Populate the timestamp.
         let (time_bytes, data_bytes) = remainder.split_at_mut(core::mem::size_of::<efi::Time>());
+        let efi_time: efi::Time = self.time.into();
         unsafe {
-            let time_src_bytes = core::ptr::addr_of!(self.time) as *const u8;
+            let time_src_bytes = &efi_time as *const efi::Time as *const u8;
             time_bytes.copy_from_slice(core::slice::from_raw_parts(
                 time_src_bytes,
                 time_bytes.len(),
@@ -215,6 +216,20 @@ impl EfiAuthVariable2 {
         let actual_size = self.get_tbs_data_buffer(&mut data)?;
         unsafe { data.set_len(actual_size) };
         Ok(data)
+    }
+
+    pub fn get_set_variable_data_buffer(&self, buffer: &mut [u8]) -> UefiResult<usize> {
+        let (time_bytes, remainder) = buffer.split_at_mut(core::mem::size_of::<efi::Time>());
+        let efi_time: efi::Time = self.time.into();
+        unsafe {
+            let time_src_bytes = &efi_time as *const efi::Time as *const u8;
+            time_bytes.copy_from_slice(core::slice::from_raw_parts(
+                time_src_bytes,
+                time_bytes.len(),
+            ));
+        }
+
+        Err(efi::Status::UNSUPPORTED)
     }
 }
 
